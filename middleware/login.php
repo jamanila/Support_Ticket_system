@@ -22,17 +22,20 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
                 "email" => $foundUser["email"],
                 "role" => $foundUser["role"]
             ];
-
-            header("Location: ../views/tickets/index.php");
-            exit();
-        }
+            if($foundUser["role"] == "admin"){
+                header("Location: ../views/tickets/index.php");
+            }elseif($foundUser["role"] == "agent"){
+                header("Location: ../views/tickets/agent.php");
+            }elseif($foundUser["role"] == "user"){
+                header("Location: ../views/tickets/user.php");
+            }
         else{
             echo "Login failed";
         }
     }
     else{
         echo "No user found";
-    }
+    }}
 }
 ?>
 

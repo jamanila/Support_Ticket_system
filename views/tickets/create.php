@@ -4,7 +4,7 @@ session_start();
 require_once("../../models/Ticket.php");
 require_once("../../middleware/Auth.php");
 
-Auth::checkRole(['agent','admin']);
+Auth::checkRole(['agent','admin','user']);
 
 $ticket = new Ticket();
 
@@ -13,8 +13,6 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     $ticket->title = $_POST['title'];
     $ticket->description = $_POST['description'];
     $ticket->status = "open";
-
-    // ✅ IMPORTANT: link ticket to logged-in user
     $ticket->user_id = $_SESSION["user"]["id"];
 
     if($ticket->createTicket()){
@@ -26,30 +24,83 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 }
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Create Ticket</title>
-</head>
-<body style="font-family: sans-serif; background-color: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
+<div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;
+min-height:100vh;display:flex;align-items:center;justify-content:center;
+background:radial-gradient(circle at top,#0b1220,#05070f);padding:30px;color:#e5e7eb;">
 
-    <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px;">
-        <h2 style="margin-top: 0; color: #333; text-align: center;">Create Support Ticket</h2>
+<div style="width:100%;max-width:520px;
+background:rgba(255,255,255,0.04);
+border:1px solid rgba(255,255,255,0.08);
+backdrop-filter:blur(12px);
+border-radius:18px;
+padding:28px;
+box-shadow:0 20px 60px rgba(0,0,0,0.5);">
 
-        <form method="POST">
-
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">Title</label>
-            <input type="text" name="title" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; margin-bottom: 20px;">
-
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">Description</label>
-            <textarea name="description" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; height: 100px; resize: vertical; margin-bottom: 20px;"></textarea>
-
-            <button type="submit" style="width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px;">
-                Create Ticket
-            </button>
-
-        </form>
+<!-- HEADER -->
+<div style="text-align:center;margin-bottom:25px;">
+    <div style="font-size:22px;font-weight:800;color:#f8fafc;">
+        🎫 Create Support Ticket
     </div>
+    <div style="font-size:13px;color:#94a3b8;margin-top:6px;">
+        Describe your issue and submit it to the support team
+    </div>
+</div>
 
-</body>
-</html>
+<form method="POST">
+
+    <!-- TITLE -->
+    <label style="display:block;margin-bottom:6px;font-size:13px;color:#cbd5e1;font-weight:600;">
+        Title
+    </label>
+
+    <input type="text" name="title" required
+    style="width:100%;padding:12px 14px;margin-bottom:18px;
+    border-radius:12px;border:1px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.03);
+    color:#f8fafc;
+    outline:none;
+    transition:0.2s;"
+    onfocus="this.style.border='1px solid #3b82f6'"
+    onblur="this.style.border='1px solid rgba(255,255,255,0.1)'">
+
+    <!-- DESCRIPTION -->
+    <label style="display:block;margin-bottom:6px;font-size:13px;color:#cbd5e1;font-weight:600;">
+        Description
+    </label>
+
+    <textarea name="description" required
+    style="width:100%;padding:12px 14px;margin-bottom:22px;
+    border-radius:12px;border:1px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.03);
+    color:#f8fafc;
+    outline:none;
+    height:120px;
+    resize:none;
+    transition:0.2s;"
+    onfocus="this.style.border='1px solid #3b82f6'"
+    onblur="this.style.border='1px solid rgba(255,255,255,0.1)'"></textarea>
+
+    <!-- BUTTON -->
+    <button type="submit"
+    style="width:100%;
+    padding:12px 14px;
+    background:linear-gradient(135deg,#3b82f6,#2563eb);
+    color:white;
+    border:none;
+    border-radius:12px;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+    box-shadow:0 10px 25px rgba(37,99,235,0.3);
+    transition:0.2s;"
+    onmouseover="this.style.transform='translateY(-2px)'"
+    onmouseout="this.style.transform='translateY(0)'">
+
+        Create Ticket
+
+    </button>
+
+</form>
+
+</div>
+</div>
