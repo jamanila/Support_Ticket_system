@@ -82,24 +82,24 @@ $tickets = $ticketModel->getTicketsForUser($user_id);
 <th style="padding:12px;">Status</th>
 <th style="padding:12px;">Created</th>
 <th style="padding:12px;">Assigned Agent</th>
+<th style="padding:12px;">Action</th>
+
 </tr>
 </thead>
 
 <tbody>
 
 <?php foreach($tickets as $t): ?>
-
 <tr style="border-bottom:1px solid #334155;">
-
 <td style="padding:12px;color:#93c5fd;font-weight:600;">#<?= $t['id'] ?></td>
 
 <td style="padding:12px;">
-<div style="font-weight:600;"><?= htmlspecialchars($t['title']) ?></div>
+<div style="font-weight:600;"><?= htmlspecialchars($t['title']) ?>
+</div>
+
 <div style="font-size:12px;color:#94a3b8;"><?= htmlspecialchars($t['description']) ?></div>
 </td>
-
 <td style="padding:12px;">
-
 <span style="padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;
 background:
 <?= 
@@ -116,10 +116,15 @@ text-transform:capitalize;">
 <td style="padding:12px;font-size:13px;color:#94a3b8;">
 <?= date("M d, Y", strtotime($t['created_at'])) ?>
 </td>
-
 <td style="padding:12px;font-size:13px;color:#e5e7eb;">
 <?= htmlspecialchars($t['agent_name'] ?? 'Not Assigned') ?>
 </td>
+<td><a href="ticket-details.php?id=<?= $t['id'] ?>" 
+style="background:#10b981;color:white;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">
+View
+</a></td>
+</a>
+
 
 </tr>
 

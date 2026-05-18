@@ -35,7 +35,7 @@ class Ticket {
         return $stmt->execute();
     }
 
-    // GET ALL TICKETS
+    // GET ALL TICKETS with their corresponding creators
 function getAllTickets(){
     $stmt = $this->conn->prepare("
         SELECT 
@@ -53,6 +53,8 @@ function getAllTickets(){
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+
+//this function gets all tickets assigned to agent. (agents open their dashboard and interact with tickets assigned to them)
 
 function getTicketsForAgent($agent_id){
     $stmt = $this->conn->prepare("
@@ -133,7 +135,7 @@ function assignTicketToAgent($ticket_id, $agent_id){
 
     // UPDATE TICKET
     function updateTicket($id, $status){
-        Auth::checkRole(['admin','agent']);
+        Auth::checkRole(['admin', 'agent']);
         $stmt = $this->conn->prepare("UPDATE tickets SET status = :status WHERE id = :id
         ");
         $stmt->bindParam(":status", $status);
@@ -146,5 +148,13 @@ function assignTicketToAgent($ticket_id, $agent_id){
         $stmt = $this->conn->prepare(" DELETE FROM tickets WHERE id = :id");
         $stmt->bindParam(":id", $id);
         return $stmt->execute();
+    }
+
+    function getTicketById($id){
+        $stmt = $this->conn->prepare("SELECT * from tickets WHERE id = :ticket_id");
+        $stmt->bindParam(":ticket_id", $id);
+        $stmt->execute();
+        $ticket = $stmt->fetch(PDO:: FETCH_ASSOC);
+        return $ticket;;
     }
 }

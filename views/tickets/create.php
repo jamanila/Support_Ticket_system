@@ -4,7 +4,7 @@ session_start();
 require_once("../../models/Ticket.php");
 require_once("../../middleware/Auth.php");
 
-Auth::checkRole(['agent','admin','user']);
+Auth::checkRole(['admin','user']);
 
 $ticket = new Ticket();
 

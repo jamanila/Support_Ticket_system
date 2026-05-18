@@ -132,7 +132,10 @@ text-transform:capitalize;">
     <option value="closed">Closed</option>
 
 </select>
-
+<a href="ticket-details.php?id=<?= $t['id'] ?>" 
+style="background:#10b981;color:white;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">
+View
+</a>
 <button type="submit" name="update_status"
     style="background:#22c55e;color:#0f172a;border:none;padding:7px 12px;border-radius:8px;font-weight:700;cursor:pointer;">
 Update
