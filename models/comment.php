@@ -1,12 +1,13 @@
 <?php
 
-require_once("../middleware/Auth.php");
+require_once("../../middleware/Auth.php");
 
 class Comment{
 
     public $id;
     public $user_id;
     public $ticket_id;
+    public $role;
     public $message;
     public $conn;
 
@@ -17,27 +18,26 @@ class Comment{
     }
 
     // 2️⃣ Add comment
-    public function addComment($ticket_id, $user_id, $message){
+public function addComment($ticket_id, $user_id, $role, $message){
 
-        // check permission first
-        Auth::canAccessTicket($ticket_id);
+    Auth::canAccessTicket($ticket_id);
 
-        // validate input
-        if(empty($message)){
-            return false;
-        }
-
-        $stmt = $this->conn->prepare("
-            INSERT INTO comments (ticket_id, user_id, message)
-            VALUES (:ticket_id, :user_id, :message)
-        ");
-
-        $stmt->bindParam(":ticket_id", $ticket_id);
-        $stmt->bindParam(":user_id", $user_id);
-        $stmt->bindParam(":message", $message);
-
-        return $stmt->execute();
+    if(empty($message)){
+        return false;
     }
+
+    $stmt = $this->conn->prepare("
+        INSERT INTO comments (ticket_id, user_id, role, message)
+        VALUES (:ticket_id, :user_id, :role, :message)
+    ");
+
+    $stmt->bindParam(":ticket_id", $ticket_id);
+    $stmt->bindParam(":user_id", $user_id);
+    $stmt->bindParam(":role", $role);
+    $stmt->bindParam(":message", $message);
+
+    return $stmt->execute();
+}
 
     // 3️⃣ Get comments for a ticket
     public function getCommentsByTicket($ticket_id){
@@ -49,7 +49,7 @@ class Comment{
                 comments.created_at,
                 users.name
             FROM comments
-            JOIN users ON comments.user_id = users.id
+            JOIN users ON  users.id =comments.user_id
             WHERE comments.ticket_id = :ticket_id
             ORDER BY comments.created_at ASC
         ");

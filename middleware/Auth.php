@@ -11,13 +11,17 @@ class Auth{
         if(!in_array($_SESSION["user"]["role"],$role) ){
             die("Access denied");
         }
+        
     }
 
-    public static function canAccessTicket($ticket){
+    public static function canAccessTicket($ticket_id){
         if(!isset($_SESSION["user"])){
             die("Unauthorized access");
         }
         
+        $ticketModel = new Ticket();
+        $ticket = $ticketModel->getTicketById($ticket_id);
+
         $currentLoggedUser = $_SESSION["user"];
         if($currentLoggedUser["role"] === "admin"){
             return true;
