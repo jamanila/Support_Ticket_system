@@ -1,6 +1,10 @@
 <?php 
-session_start(); 
+// Place this at line 1 of ticket-details.php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
+session_start(); 
 require_once("../../models/comment.php"); 
 require_once("../../models/Ticket.php"); 
 require_once("../../middleware/Auth.php"); 
@@ -37,13 +41,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($_POST['message']) || empty($_POST['ticket_id'])) { 
         die('Any of these fields should not be empty'); 
     } 
-        var_dump($_SESSION["user"]["id"]);
-    exit;
+
     $comment->addComment( 
         $ticket_id, 
-        $_POST['message'], 
-        $user['role'], 
-        $user['id'] 
+        $user['id'] ,
+        $userRole, 
+        $_POST['message']
     ); 
 } 
 

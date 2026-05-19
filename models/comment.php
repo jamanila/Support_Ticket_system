@@ -47,6 +47,7 @@ public function addComment($ticket_id, $user_id, $role, $message){
                 comments.id,
                 comments.message,
                 comments.created_at,
+                comments.role,
                 users.name
             FROM comments
             JOIN users ON  users.id =comments.user_id
