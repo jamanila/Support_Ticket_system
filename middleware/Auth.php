@@ -26,7 +26,7 @@ class Auth{
         if($currentLoggedUser["role"] === "admin"){
             return true;
         }
-        if($currentLoggedUser["id"] == $ticket["user_id"]){
+        if($currentLoggedUser["id"] == $ticket["user_id"] || $currentLoggedUser['id'] == $ticket["assigned_to"]){
             return true;
         }
         else{

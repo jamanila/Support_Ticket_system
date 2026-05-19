@@ -37,6 +37,7 @@ public function addComment($ticket_id, $user_id, $role, $message){
     $stmt->bindParam(":message", $message);
 
     return $stmt->execute();
+    
 }
 
     // 3️⃣ Get comments for a ticket

@@ -3,40 +3,40 @@ session_start();
 
 if (!isset($_SESSION["user"])) { 
     header("Location: ../../middleware/login.php"); 
-    exit(); 
-} 
-
-require_once "../../middleware/Auth.php"; 
-require_once "../../models/Ticket.php"; 
-require_once "../../models/Users.php"; 
-
-Auth::checkRole(["admin"]); 
-
-$ticket = new Ticket(); 
-$tickets = $ticket->getAllTickets(); 
-
-$UserModel = new Users(); 
-$users = $UserModel->getAllUsers(); 
-
-// Handle ticket assignment action
-if (isset($_POST['assign_ticket'])) { 
-    $ticket_id = $_POST['ticket_id']; 
-    $agent_id = $_POST['agent_id']; 
-    
-    if (!empty($agent_id)) { 
-        $ticket->assignTicketToAgent($ticket_id, $agent_id); 
+        exit(); 
     } 
-    
-    header("Location: index.php"); 
-    exit(); 
-} 
 
-/* ========================= KPI CALCULATIONS ========================= */ 
-$totalTickets = count($tickets); 
-$openTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'open')); 
-$inProgressTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'in_progress')); 
-$closedTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'closed')); 
-?>
+    require_once "../../middleware/Auth.php"; 
+    require_once "../../models/Ticket.php"; 
+    require_once "../../models/Users.php"; 
+
+    Auth::checkRole(["admin"]); 
+
+    $ticket = new Ticket(); 
+    $tickets = $ticket->getAllTickets(); 
+
+    $UserModel = new Users(); 
+    $users = $UserModel->getAllUsers(); 
+
+    // Handle ticket assignment action
+    if (isset($_POST['assign_ticket'])) { 
+        $ticket_id = $_POST['ticket_id']; 
+        $agent_id = $_POST['agent_id']; 
+        
+        if (!empty($agent_id)) { 
+            $ticket->assignTicketToAgent($ticket_id, $agent_id); 
+        } 
+        
+        header("Location: index.php"); 
+        exit(); 
+    } 
+
+    /* ========================= KPI CALCULATIONS ========================= */ 
+    $totalTickets = count($tickets); 
+    $openTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'open')); 
+    $inProgressTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'in_progress')); 
+    $closedTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'closed')); 
+    ?>
 
 <!-- MAIN WRAPPER -->
 <div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;background:radial-gradient(circle at top,#0b1220,#05070f);min-height:100vh;padding:30px;color:#e5e7eb;">

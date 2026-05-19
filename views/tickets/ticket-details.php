@@ -39,7 +39,7 @@ $comment = new Comment();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") { 
     if (empty($_POST['message']) || empty($_POST['ticket_id'])) { 
-        die('Any of these fields should not be empty'); 
+        die('Comment field should not be empty'); 
     } 
 
     $comment->addComment( 
@@ -48,6 +48,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $userRole, 
         $_POST['message']
     ); 
+    header("Location: ticket-details.php?id=" .$ticket_id);
+    exit();
 } 
 
 // Fetch current conversation stream comments
@@ -76,13 +78,32 @@ $comments = $commentModel->getCommentsByTicket($ticket_id);
                         🎫 Ticket Conversation 
                     </div> 
                     <div style="font-size:13px;color:#94a3b8;margin-top:5px;"> 
-                        Support communication center 
+                        <?php htmlspecialchars($ticket['title']) ?>
                     </div> 
                 </div> 
                 <div style="display:flex;gap:10px;align-items:center;"> 
-                    <button style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer;"> 
-                        ← Back 
-                    </button> 
+                    <?php if($user['role'] == "admin"): ?>
+
+                    <a href="index.php"
+                    style="display:inline-block;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer;text-decoration:none;">
+                    ← Back
+                    </a>
+
+                    <?php elseif($user['role'] == "agent"): ?>
+
+                    <a href="agent.php"
+                    style="display:inline-block;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer;text-decoration:none;">
+                    ← Back
+                    </a>
+
+                    <?php else: ?>
+
+                    <a href="user.php"
+                    style="display:inline-block;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer;text-decoration:none;">
+                    ← Back
+                    </a>
+
+                    <?php endif; ?> 
                     <button style="background:#ef4444;border:none;color:white;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer;"> 
                         Close Ticket 
                     </button> 
