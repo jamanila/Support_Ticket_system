@@ -183,7 +183,7 @@ if (!isset($_SESSION["user"])) {
                                 <a href="update.php?id=<?= $t['id'] ?>" style="background:#3b82f6;color:white;padding:6px 10px;border-radius:8px; text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">
                                     Close
                                 </a>
-                                <a href="ticket_details.php?<?= $t['id'] ?>" style="background:#10b981;color:white;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">
+                                <a href="ticket-details.php?id=<?= $t['id'] ?>" style="background:#10b981;color:white;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">
                                     View
                                 </a>
                             <?php else: ?>

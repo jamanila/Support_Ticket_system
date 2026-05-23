@@ -11,7 +11,8 @@ require_once("../../middleware/Auth.php");
 
 // Access authentication verification
 if (!isset($_SESSION['user'])) { 
-    die('Access denied'); 
+    header("Location: ../errors/401.php");
+    exit(); 
 } else { 
     $user = $_SESSION['user']; 
     $userRole = $user['role']; 
@@ -20,7 +21,8 @@ if (!isset($_SESSION['user'])) {
 
 // Parameter checks
 if (!isset($_GET['id'])) { 
-    die('No ticket found'); 
+    header("Location: ../errors/404.php");
+    exit(); 
 } 
 
 $ticket_id = $_GET['id']; 
@@ -63,10 +65,16 @@ $comments = $commentModel->getCommentsByTicket($ticket_id);
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>Ticket Conversation</title> 
 </head> 
+<script>
+window.onload = function () {
+    const chatBox = document.getElementById("chat-box");
+    chatBox.scrollTop = chatBox.scrollHeight;
+};
+</script>
 <body style="margin:0;padding:0;background:#05070f;"> 
 
     <!-- MAIN WRAPPER (Radial Gradient Background) --> 
-    <div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;min-height:100vh;background:radial-gradient(circle at top,#0b1220,#05070f);padding:30px;color:#e5e7eb;display:flex;justify-content:center;"> 
+    <div id="chat-box" style="font-family:'Segoe UI',Roboto,Arial,sans-serif;min-height:100vh;background:radial-gradient(circle at top,#0b1220,#05070f);padding:30px;color:#e5e7eb;display:flex;justify-content:center;"> 
         
         <!-- CENTRAL CONTENT CONTAINER --> 
         <div style="width:100%;max-width:950px;display:flex;flex-direction:column;gap:18px;"> 
@@ -109,7 +117,7 @@ $comments = $commentModel->getCommentsByTicket($ticket_id);
                     </button> 
                 </div> 
             </div> 
-
+            
             <!-- SECTION 2: TICKET META INFO CARD --> 
             <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);border-radius:18px;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,0.35);"> 
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;"> 
@@ -118,14 +126,32 @@ $comments = $commentModel->getCommentsByTicket($ticket_id);
                             <!-- Ticket #1024 — Login Authentication Failure --> 
                         </div> 
                         <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:#94a3b8;"> 
-                            <div>👤 Created by: John Doe</div> 
-                            <div>🧑‍💻 Assigned: Agent Smith</div> 
-                            <div>📅 Created: Jul 18, 2026</div> 
+                            <div>👤 
+                                Created by:
+                                <?php if($userRole === $ticket['creator_name']):?>
+                                    <div>you</div>
+                                    <?php else:?>
+                                        <?= htmlspecialchars($ticket["creator_name"]) ?>
+                                        <?php endif;?>
+
+                            </div> 
+                                <div>
+                                    👤 Assigned to:
+                                 <?php if(!empty($ticket["agent_name"])):?>
+                                    <?= htmlspecialchars($ticket["agent_name"]) ?>
+                                    <?php else:?>
+                                        <span> style="color:red"><?= die("Not assigned to any Agent yet") ?></span>
+                                        <?php endif;?>
+                            </div> 
+                                <div> 
+                                📅Created by:
+                                <?= htmlspecialchars($ticket["created_at"]) ?>
+                            </div> 
                         </div> 
                     </div> 
                     <!-- STATUS PILL --> 
                     <div style="padding:8px 16px;border-radius:999px;background:rgba(245,158,11,0.15);color:#fbbf24;font-size:12px;font-weight:800;letter-spacing:1px;"> 
-                        OPEN 
+                        <?= htmlspecialchars($ticket['status']) ?> 
                     </div> 
                 </div> 
             </div> 
@@ -172,7 +198,7 @@ $comments = $commentModel->getCommentsByTicket($ticket_id);
 
                     <?php else: ?> 
                         <!-- ADMIN SYSTEM MESSAGE (Center Aligned Notice) -->
-                        <div style="align-self:center;max-width:80%;background:rgba(34,197,94,0.15);padding:10px 14px;border-radius:14px;border:1px solid rgba(34,197,94,0.25);text-align:center;"> 
+                        <div style="align-self:center;max-width:80%;background:rgba(26, 209, 93, 0.15);padding:10px 14px;border-radius:14px;border:1px solid rgba(34,197,94,0.25);text-align:center;"> 
                             <div style="font-size:12px;color:#34d399;margin-bottom:4px;"> 
                                 <?= htmlspecialchars($comment['name']) ?> (admin) 
                             </div> 

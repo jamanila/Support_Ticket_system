@@ -6,17 +6,20 @@ class Auth{
 
     public static function checkRole($role){
         if(!isset($_SESSION["user"])){
-            die("Access denied");
+            header("Location: ../../errors/401.php");
+            exit();
         }
         if(!in_array($_SESSION["user"]["role"],$role) ){
-            die("Access denied");
+            header("Location: ../errors/403.php");
+            exit();
         }
         
     }
 
     public static function canAccessTicket($ticket_id){
         if(!isset($_SESSION["user"])){
-            die("Unauthorized access");
+            header("Location: ../../errors/401.php");
+            exit();
         }
         
         $ticketModel = new Ticket();
@@ -30,7 +33,7 @@ class Auth{
             return true;
         }
         else{
-            die("Unauthorised ticket Access");
+            header("Location: ../../errors/403.php");
         }
     }
 }

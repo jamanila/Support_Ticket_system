@@ -151,7 +151,13 @@ function assignTicketToAgent($ticket_id, $agent_id){
     }
 
     function getTicketById($id){
-        $stmt = $this->conn->prepare("SELECT * from tickets WHERE id = :ticket_id");
+        $stmt= $this->conn->prepare("SELECT tickets.*, creator.name AS creator_name, agent.name AS agent_name
+        FROM tickets
+        JOIN users as creator ON
+        creator.id = tickets.user_id
+        LEFT JOIN users as agent ON
+        agent.id = tickets.assigned_to
+        WHERE tickets.id = :ticket_id");
         $stmt->bindParam(":ticket_id", $id);
         $stmt->execute();
         $ticket = $stmt->fetch(PDO:: FETCH_ASSOC);

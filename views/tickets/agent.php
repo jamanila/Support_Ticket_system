@@ -5,9 +5,7 @@ if (!isset($_SESSION["user"])) {
     header("Location: ../../middleware/login.php"); 
     exit(); 
 } 
-
 require_once "../../models/Ticket.php"; 
-
 $ticketModel = new Ticket(); 
 $agent_id = $_SESSION["user"]["id"]; 
 
