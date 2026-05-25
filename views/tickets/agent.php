@@ -6,9 +6,10 @@ if (!isset($_SESSION["user"])) {
     exit(); 
 } 
 require_once "../../models/Ticket.php"; 
+
 $ticketModel = new Ticket(); 
 $agent_id = $_SESSION["user"]["id"]; 
-
+Auth::checkRole(['admin','agent']);
 /* Handle status update action */ 
 if (isset($_POST['update_status'])) { 
     $ticket_id = $_POST['ticket_id']; 
@@ -122,7 +123,13 @@ $tickets = $ticketModel->getTicketsForAgent($agent_id);
                                 <a href="ticket-details.php?id=<?= $t['id'] ?>" style="background:#10b981;color:white;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">
                                     View
                                 </a>
-                                
+
+                                     <?php if($t['unread_count'] > 0): ?>
+                                    <span style="background:red;color:white;padding:3px 7px;border-radius:999px;font-size:11px;">
+                                        <?= $t['unread_count'] ?> new
+                                    </span>
+                                <?php endif; ?>
+
                                 <button type="submit" name="update_status" style="background:#22c55e;color:#0f172a;border:none;padding:7px 12px;border-radius:8px;font-weight:700;cursor:pointer;">
                                     Update
                                 </button>

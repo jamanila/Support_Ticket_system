@@ -2,6 +2,7 @@
 class Notification{
 
 public $conn;
+public $is_read = "Not read";
 
 public function __construct()
 {
@@ -11,8 +12,8 @@ public function __construct()
 
 //create notification on the database
 function createNotification($user_id, $ticket_id, $message){
-    $stmt = $this->conn->prepare("INSERT INTO notifications VALUES(:user_id, :ticket_id, :message)");
-    $stmt->bindParam(':user_id', $user_id);
+    $stmt = $this->conn->prepare("INSERT INTO notifications(user_id, ticket_id, message) VALUES(:user_id, :ticket_id, :message)");
+    $stmt->bindParam(":user_id", $user_id);
     $stmt->bindParam(":ticket_id", $ticket_id);
     $stmt->bindParam(":message", $message);
     $stmt->execute();
@@ -20,7 +21,7 @@ function createNotification($user_id, $ticket_id, $message){
 
 //getting notification from the datbase and displays to the corresponding user
 function getUserNotification(){
-    $stmt = $this->conn->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = :user_id ORDER BY created_at DESC");
+    $stmt = $this->conn->prepare("SELECT * FROM notifications WHERE user_id = :user_id ORDER BY created_at DESC");
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }

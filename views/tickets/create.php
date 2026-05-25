@@ -7,6 +7,7 @@ require_once("../../middleware/Auth.php");
 Auth::checkRole(['admin','user']); 
 
 $ticket = new Ticket(); 
+$userRole = $_SESSION['user']['role'];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") { 
     $ticket->title = $_POST['title']; 
@@ -15,8 +16,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $ticket->user_id = $_SESSION["user"]["id"]; 
     
     if ($ticket->createTicket()) { 
-        header('Location: index.php'); 
-        exit(); 
+        if($userRole == "admin"){
+            header("Location: ../admin/index.php");
+            exit();
+        }
+        else{
+            header("Location: user.php");
+            exit();
+        }
     } else { 
         echo "Failed to create ticket"; 
     } 

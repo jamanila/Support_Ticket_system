@@ -23,7 +23,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
                 "role" => $foundUser["role"]
             ];
             if($foundUser["role"] == "admin"){
-                header("Location: ../views/tickets/index.php");
+                header("Location: ../views/admin/index.php");
             }elseif($foundUser["role"] == "agent"){
                 header("Location: ../views/tickets/agent.php");
             }elseif($foundUser["role"] == "user"){

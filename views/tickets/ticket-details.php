@@ -1,62 +1,127 @@
 <?php 
-// Place this at line 1 of ticket-details.php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 session_start(); 
-require_once("../../models/comment.php"); 
+
+require_once("../../models/Comment.php"); 
 require_once("../../models/Ticket.php"); 
 require_once("../../middleware/Auth.php"); 
+require_once("../../models/Notification.php");
 
-// Access authentication verification
+// ==========================
+// AUTH CHECK
+// ==========================
 if (!isset($_SESSION['user'])) { 
     header("Location: ../errors/401.php");
     exit(); 
-} else { 
-    $user = $_SESSION['user']; 
-    $userRole = $user['role']; 
-    $userName = $user['name']; 
-} 
+}
 
-// Parameter checks
+$user = $_SESSION['user']; 
+$userRole = $user['role']; 
+$userId = $user['id']; 
+$userName = $user['name']; 
+
+// ==========================
+// VALIDATE TICKET ID
+// ==========================
 if (!isset($_GET['id'])) { 
     header("Location: ../errors/404.php");
     exit(); 
-} 
+}
 
-$ticket_id = $_GET['id']; 
+$ticket_id = (int) $_GET['id']; 
+
+// ==========================
+// LOAD TICKET
+// ==========================
 $ticketModel = new Ticket(); 
 $ticket = $ticketModel->getTicketById($ticket_id); 
 
 if (empty($ticket)) { 
-    die("No ticket found"); 
-} 
+    header("Location: ../errors/404.php");
+    exit(); 
+}
 
-// Check if the user is accepted to access the ticket 
-Auth::canAccessTicket($ticket_id); 
+// ==========================
+// ACCESS CONTROL
+// ==========================
+Auth::canAccessTicket($ticket_id);
 
-// Submitting the reply form 
-$comment = new Comment(); 
+// ==========================
+// MARK AS READ (IMPORTANT FIX)
+// ==========================
+$markRead = $ticketModel->conn->prepare("
+    INSERT INTO ticket_reads (ticket_id, user_id, last_read_at)
+    VALUES (:ticket_id, :user_id, NOW())
+    ON DUPLICATE KEY UPDATE last_read_at = NOW()
+");
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") { 
-    if (empty($_POST['message']) || empty($_POST['ticket_id'])) { 
-        die('Comment field should not be empty'); 
-    } 
+$markRead->execute([
+    ":ticket_id" => $ticket_id,
+    ":user_id" => $userId
+]);
 
-    $comment->addComment( 
-        $ticket_id, 
-        $user['id'] ,
-        $userRole, 
+// ==========================
+// HANDLE COMMENT SUBMISSION
+// ==========================
+$commentModel = new Comment();
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+    if (empty($_POST['message'])) {
+        die('Comment field should not be empty');
+    }
+
+    $commentModel->addComment(
+        $ticket_id,
+        $userId,
+        $userRole,
         $_POST['message']
-    ); 
-    header("Location: ticket-details.php?id=" .$ticket_id);
-    exit();
-} 
+    );
 
-// Fetch current conversation stream comments
-$commentModel = new Comment(); 
-$comments = $commentModel->getCommentsByTicket($ticket_id); 
+    // ==========================
+    // NOTIFICATIONS
+    // ==========================
+    $notification = new Notification();
+
+    if ($userRole == "user") {
+
+        if (!empty($ticket['assigned_to'])) {
+            $notification->createNotification(
+                $ticket['assigned_to'],
+                $ticket_id,
+                "Customer replied to ticket"
+            );
+        }
+
+    } elseif ($userRole == "agent") {
+
+        $notification->createNotification(
+            $ticket['user_id'],
+            $ticket_id,
+            "Agent replied to your ticket"
+        );
+
+    } elseif ($userRole == "admin") {
+
+        $notification->createNotification(
+            $ticket['user_id'],
+            $ticket_id,
+            "Admin replied to your ticket"
+        );
+    }
+
+    header("Location: ticket-details.php?id=" . $ticket_id);
+    exit();
+}
+
+// ==========================
+// LOAD COMMENTS
+// ==========================
+$comments = $commentModel->getCommentsByTicket($ticket_id);
+
 ?>
 <!DOCTYPE html> 
 <html lang="en"> 
@@ -74,7 +139,6 @@ window.onload = function () {
 <body style="margin:0;padding:0;background:#05070f;"> 
 
     <!-- MAIN WRAPPER (Radial Gradient Background) --> 
-    <div id="chat-box" style="font-family:'Segoe UI',Roboto,Arial,sans-serif;min-height:100vh;background:radial-gradient(circle at top,#0b1220,#05070f);padding:30px;color:#e5e7eb;display:flex;justify-content:center;"> 
         
         <!-- CENTRAL CONTENT CONTAINER --> 
         <div style="width:100%;max-width:950px;display:flex;flex-direction:column;gap:18px;"> 
@@ -86,13 +150,13 @@ window.onload = function () {
                         🎫 Ticket Conversation 
                     </div> 
                     <div style="font-size:13px;color:#94a3b8;margin-top:5px;"> 
-                        <?php htmlspecialchars($ticket['title']) ?>
+                        <?= htmlspecialchars($ticket['title']) ?>
                     </div> 
                 </div> 
                 <div style="display:flex;gap:10px;align-items:center;"> 
                     <?php if($user['role'] == "admin"): ?>
 
-                    <a href="index.php"
+                    <a href="../admin/index.php"
                     style="display:inline-block;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer;text-decoration:none;">
                     ← Back
                     </a>
@@ -128,7 +192,7 @@ window.onload = function () {
                         <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:#94a3b8;"> 
                             <div>👤 
                                 Created by:
-                                <?php if($userRole === $ticket['creator_name']):?>
+                                <?php if($userName === $ticket['creator_name']):?>
                                     <div>you</div>
                                     <?php else:?>
                                         <?= htmlspecialchars($ticket["creator_name"]) ?>
@@ -140,7 +204,7 @@ window.onload = function () {
                                  <?php if(!empty($ticket["agent_name"])):?>
                                     <?= htmlspecialchars($ticket["agent_name"]) ?>
                                     <?php else:?>
-                                        <span> style="color:red"><?= die("Not assigned to any Agent yet") ?></span>
+                                        <span style="color: red">Not assigned yet</span>
                                         <?php endif;?>
                             </div> 
                                 <div> 

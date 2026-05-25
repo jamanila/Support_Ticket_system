@@ -11,7 +11,7 @@ class Ticket {
     public $created_at;
     public $user_id;
 
-    private $conn;
+    public $conn;
 
     public function __construct()
     {
@@ -36,32 +36,61 @@ class Ticket {
     }
 
     // GET ALL TICKETS with their corresponding creators
-function getAllTickets(){
-    $stmt = $this->conn->prepare("
-        SELECT 
-            tickets.*,
-            creator.name AS creator_name,
-            agent.name AS agent_name
-        FROM tickets
-        LEFT JOIN users AS creator 
-            ON tickets.user_id = creator.id
-        LEFT JOIN users AS agent 
-            ON tickets.assigned_to = agent.id
-        ORDER BY tickets.id DESC
-    ");
-
-    $stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
+// function getAllTickets(){
+//     $stmt = $this->conn->prepare("
+//         SELECT 
+//             tickets.*,
+//             creator.name AS creator_name,
+//             agent.name AS agent_name
+//         FROM tickets
+//         LEFT JOIN users AS creator 
+//             ON tickets.user_id = creator.id
+//         LEFT JOIN users AS agent 
+//             ON tickets.assigned_to = agent.id
+//         ORDER BY created_at DESC
+//     ");
+//     $stmt->execute();
+//     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+// }
 
 //this function gets all tickets assigned to agent. (agents open their dashboard and interact with tickets assigned to them)
 
 function getTicketsForAgent($agent_id){
+
     $stmt = $this->conn->prepare("
-        SELECT * FROM tickets WHERE assigned_to = :agent_id
+        SELECT 
+            t.*,
+            creator.name AS creator_name,
+
+            (
+                SELECT COUNT(*)
+                FROM comments c
+                WHERE c.ticket_id = t.id
+                AND c.created_at > COALESCE(
+                    (
+                        SELECT tr.last_read_at
+                        FROM ticket_reads tr
+                        WHERE tr.ticket_id = t.id
+                        AND tr.user_id = :agent_id
+                    ),
+                    '1970-01-01'
+                )
+            ) AS unread_count
+
+        FROM tickets t
+
+        LEFT JOIN users AS creator
+            ON t.user_id = creator.id
+
+        WHERE t.assigned_to = :agent_id
+
+        ORDER BY t.created_at DESC
     ");
+
     $stmt->bindParam(":agent_id", $agent_id);
+
     $stmt->execute();
+
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -163,4 +192,43 @@ function assignTicketToAgent($ticket_id, $agent_id){
         $ticket = $stmt->fetch(PDO:: FETCH_ASSOC);
         return $ticket;;
     }
+
+public function getTicketsWithUnreadCount($user_id){
+
+    $stmt = $this->conn->prepare("
+        SELECT 
+            t.*,
+            creator.name AS creator_name,
+            agent.name AS agent_name,
+
+            COUNT(
+                CASE 
+                    WHEN cr.id IS NULL THEN 1 
+                END
+            ) AS unread_count
+
+        FROM tickets t
+
+        LEFT JOIN users AS creator 
+            ON t.user_id = creator.id
+
+        LEFT JOIN users AS agent 
+            ON t.assigned_to = agent.id
+
+        LEFT JOIN comments c 
+            ON c.ticket_id = t.id
+
+        LEFT JOIN comment_reads cr 
+            ON cr.comment_id = c.id 
+            AND cr.user_id = :user_id
+
+        GROUP BY t.id
+        ORDER BY t.created_at DESC
+    ");
+
+    $stmt->bindParam(":user_id", $user_id);
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 }

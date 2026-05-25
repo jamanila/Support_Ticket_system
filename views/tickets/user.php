@@ -7,10 +7,9 @@ if (!isset($_SESSION["user"])) {
 } 
 
 require_once "../../models/Ticket.php"; 
-
+Auth::checkRole(['admin', 'user']);
 $ticketModel = new Ticket(); 
 $user_id = $_SESSION["user"]["id"]; 
-
 /* Fetch user tickets */ 
 $tickets = $ticketModel->getTicketsForUser($user_id); 
 ?>

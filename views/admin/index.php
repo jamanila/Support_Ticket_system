@@ -12,8 +12,9 @@ if (!isset($_SESSION["user"])) {
 
     Auth::checkRole(["admin"]); 
 
-    $ticket = new Ticket(); 
-    $tickets = $ticket->getAllTickets(); 
+    $ticketModel = new Ticket();
+    $userId = $_SESSION['user']['id'];
+    $tickets = $ticketModel->getTicketsWithUnreadCount($userId);
 
     $UserModel = new Users(); 
     $users = $UserModel->getAllUsers(); 
@@ -24,12 +25,13 @@ if (!isset($_SESSION["user"])) {
         $agent_id = $_POST['agent_id']; 
         
         if (!empty($agent_id)) { 
-            $ticket->assignTicketToAgent($ticket_id, $agent_id); 
+            $ticketModel->assignTicketToAgent($ticket_id, $agent_id); 
         } 
         
         header("Location: index.php"); 
         exit(); 
     } 
+
 
     /* ========================= KPI CALCULATIONS ========================= */ 
     $totalTickets = count($tickets); 
@@ -62,7 +64,7 @@ if (!isset($_SESSION["user"])) {
     <!-- SECTION 2: SEARCH + ACTION BAR -->
     <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
         <input type="text" id="ticketSearch" onkeyup="filterTickets()" placeholder="Search tickets..." style="flex:1;min-width:260px;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03);color:#e5e7eb;outline:none;">
-        <a href="create.php" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;padding:11px 16px;border-radius:12px; text-decoration:none;font-weight:600;font-size:14px;">
+        <a href="../tickets/create.php" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;padding:11px 16px;border-radius:12px; text-decoration:none;font-weight:600;font-size:14px;">
             + New Ticket
         </a>
     </div>
@@ -180,12 +182,22 @@ if (!isset($_SESSION["user"])) {
                         <!-- Action Row Options -->
                         <td style="padding:14px;text-align:center;white-space:nowrap;">
                             <?php if($t['status'] !== "closed"): ?>
-                                <a href="update.php?id=<?= $t['id'] ?>" style="background:#3b82f6;color:white;padding:6px 10px;border-radius:8px; text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">
+                                <a href="../tickets/update.php?id=<?= $t['id'] ?>" style="background:#3b82f6;color:white;padding:6px 10px;border-radius:8px; text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">
                                     Close
                                 </a>
-                                <a href="ticket-details.php?id=<?= $t['id'] ?>" style="background:#10b981;color:white;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">
+                                <a href="../tickets/ticket-details.php?id=<?= $t['id'] ?>" style="background:#10b981;color:white;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">
                                     View
                                 </a>
+                                <?php if($t['unread_count'] > 0): ?>
+                                    <span style="background:red;color:white;padding:3px 7px;border-radius:999px;font-size:11px;">
+                                        <?= $t['unread_count'] ?> new
+                                    </span>
+                                <?php else: ?>
+                                    <span style="color:#22c55e;font-size:11px;">
+                                        read
+                                    </span>
+                                <?php endif; ?>
+                                
                             <?php else: ?>
                                 <span style="color:#22c55e;font-weight:700;font-size:13px;">
                                     Resolved

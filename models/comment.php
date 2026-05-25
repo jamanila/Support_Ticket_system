@@ -61,5 +61,41 @@ public function addComment($ticket_id, $user_id, $role, $message){
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+public function getTicketsWithUnreadCount($user_id){
+
+    $stmt = $this->conn->prepare("
+        SELECT 
+            t.*,
+            creator.name AS creator_name,
+            agent.name AS agent_name,
+
+            (
+                SELECT COUNT(*)
+                FROM comments c
+                WHERE c.ticket_id = t.id
+                AND c.created_at > COALESCE(
+                    (
+                        SELECT tr.last_read_at
+                        FROM ticket_reads tr
+                        WHERE tr.ticket_id = t.id
+                        AND tr.user_id = :user_id
+                    ),
+                    '1970-01-01'
+                )
+            ) AS unread_count
+
+        FROM tickets t
+
+        LEFT JOIN users AS creator ON t.user_id = creator.id
+        LEFT JOIN users AS agent ON t.assigned_to = agent.id
+
+        ORDER BY t.created_at DESC
+    ");
+
+    $stmt->bindParam(":user_id", $user_id);
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 }
 ?>
