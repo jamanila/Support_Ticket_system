@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once ("../models/Users.php");
+require_once __DIR__ . "/../../app/models/Users.php";
 
 $user = new Users();
 
@@ -15,27 +15,37 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 
         if(password_verify($password, $foundUser["password"])){
 
-            // ✅ THIS IS THE MISSING PART
             $_SESSION["user"] = [
                 "id" => $foundUser["id"],
                 "name" => $foundUser["name"],
                 "email" => $foundUser["email"],
                 "role" => $foundUser["role"]
             ];
+
+            // success flash
+            $_SESSION['flash'][] = ['type' => 'success', 'message' => 'Logged in successfully'];
+
             if($foundUser["role"] == "admin"){
-                header("Location: ../views/admin/index.php");
+                header("Location: /OOP/SupportSystem/views/admin/index.php");
+                exit();
             }elseif($foundUser["role"] == "agent"){
-                header("Location: ../views/tickets/agent.php");
+                header("Location: /OOP/SupportSystem/views/tickets/agent.php");
+                exit();
             }elseif($foundUser["role"] == "user"){
-                header("Location: ../views/tickets/user.php");
+                header("Location: /OOP/SupportSystem/views/tickets/user.php");
+                exit();
             }
-        else{
-            echo "Login failed";
+        } else {
+            $_SESSION['flash'][] = ['type' => 'error', 'message' => 'Invalid credentials'];
+            header("Location: login.php");
+            exit();
         }
     }
     else{
-        echo "No user found";
-    }}
+        $_SESSION['flash'][] = ['type' => 'error', 'message' => 'No user found with that email'];
+        header("Location: login.php");
+        exit();
+    }
 }
 ?>
 
@@ -45,6 +55,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 <html style="height: 100%;">
 <head>
     <title>Login</title>
+    <?php require_once __DIR__ . "/../partials/header.php"; ?>
 </head>
 <body style="margin: 0; font-family: sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh;">
 

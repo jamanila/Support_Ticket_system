@@ -3,7 +3,7 @@ session_start();
 session_destroy();
 session_unset();
 
-header("Location: /OOP/SupportSystem/middleware/login.php");
+header("Location: /OOP/SupportSystem/app/middleware/login.php");
 exit();
 
 ?>

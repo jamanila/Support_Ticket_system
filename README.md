@@ -1,127 +1,113 @@
 # 🛠 Support Ticket System (PHP OOP)
 
-A simple yet powerful **Support Ticket Management System** built using PHP (OOP), MySQL, and session-based authentication.  
-It supports multiple roles such as **Admin, Agent, and User**, with ticket creation, assignment, and conversation tracking.
+A simple Support Ticket Management System built with plain PHP, MySQL, and session-based authentication. The application supports three roles: **Admin**, **Agent**, and **User**, with role-based access to dashboards, ticket creation, assignment, and conversation tracking.
 
 ---
 
 ## 🚀 Features
 
-### 👤 Authentication & Roles
-- Session-based login system
+- Session-based login and registration
 - Role-based access control:
   - Admin
   - Agent
   - User
+- Ticket creation and update workflow
+- Agent assignment from admin dashboard
+- Ticket status updates: Open, In Progress, Closed
+- Ticket conversation / reply page for users and agents
+- Flash success/error messaging via session toasts
+- Centralized header/footer partials for layout consistency
 
 ---
 
-### 🎫 Ticket Management
-- Create new support tickets
-- View all tickets (role-based visibility)
-- Assign tickets to agents (Admin)
-- Update ticket status:
-  - Open
-  - In Progress
-  - Closed
-- Delete tickets (Admin only)
+## 📁 Project Structure
 
----
-
-### 💬 Ticket Conversation System
-- Each ticket has a dedicated conversation page
-- Users and agents can communicate inside a ticket
-- Chronological message display (chat-style UI)
-
----
-
-### 📊 Admin Dashboard
-- Total tickets overview
-- Open / In-progress / Closed counters
-- Ticket management table
-- Agent assignment system
-
----
-
-### 🎨 UI/UX
-- Modern dark-themed interface
-- Inline CSS styling (no external CSS framework)
-- Glassmorphism-inspired cards
-- Responsive layout (basic support)
-
----
-
-## 🏗 Project Structure
-/SupportSystem
-│
-├── models/
-│ ├── Ticket.php
-│ ├── Users.php
-│ └── Comment.php (future)
-│
-├── middleware/
-│ ├── Auth.php
-│ └── login.php
-│
-├── admin/
-│ ├── index.php
-│
-├── agent/
-│ ├── index.php
-│
-├── user/
-│ ├── index.php
-│
-├── tickets/
-│ ├── create.php
-│ ├── update.php
-│ ├── delete.php
-│ ├── ticket_details.php
-│
+SupportSystem/
+├── app/
+│   ├── middleware/
+│   │   ├── Auth.php
+│   │   └── login.php
+│   └── models/
+│       ├── Ticket.php
+│       ├── Users.php
+│       ├── Comment.php
+│       └── Notification.php
 ├── config/
-│ ├── db.php
-│
+│   └── db.php
+├── public/
+│   └── css/
+│       └── app.css
+├── views/
+│   ├── admin/
+│   │   ├── index.php
+│   │   └── delete.php
+│   ├── agent/
+│   │   └── dashboard.php
+│   ├── auth/
+│   │   ├── login.php
+│   │   └── register.php
+│   ├── errors/
+│   │   ├── 401.php
+│   │   ├── 403.php
+│   │   ├── 404.php
+│   │   └── 500.php
+│   ├── partials/
+│   │   ├── footer.php
+│   │   └── header.php
+│   ├── tickets/
+│   │   ├── agent.php
+│   │   ├── create.php
+│   │   ├── ticket-details.php
+│   │   ├── update.php
+│   │   └── user.php
+│   └── user/
+│       └── dashboard.php
+├── index.php
 └── README.md
-
 
 ---
 
 ## ⚙️ Installation
 
-1. Clone the repository:
-```bash
-git clone https://github.com/your-username/Support_Ticket_System.git
-Move project to your local server:
-XAMPP → htdocs/SupportSystem
-Import database:
-Create a MySQL database
-Import provided .sql file
-Configure database connection:
-config/db.php
+1. Place the project folder inside your local server document root, for example:
 
-To Run this project project;
-http://localhost/SupportSystem
-| Role  | Permissions                               |
-| ----- | ----------------------------------------- |
-| Admin | Full access, assign tickets, manage users |
-| Agent | Handle assigned tickets, reply to tickets |
-| User  | Create tickets, view own tickets          |
+   `C:\xampp\htdocs\SupportSystem`
 
-Learning Goals of This Project
-PHP OOP structure
-Session authentication
-Role-based access control
-CRUD operations with MySQL
-Basic MVC-like separation
-UI design using inline CSS
-Ticket lifecycle management
+2. Create a MySQL database and import the application schema.
+3. Update the database connection settings in `config/db.php`.
+4. Open the application in your browser:
 
-FUTURE IMPROVEMENTS:
-Add real-time chat (AJAX/WebSockets)
-Add notifications system
-File attachments in tickets
-Pagination & filtering
-Better MVC structure
-REST API version
+   `http://localhost/SupportSystem`
 
-Built as a learning project for mastering PHP OOP and system design fundamentals.
+---
+
+## 🧭 Usage
+
+- `views/auth/login.php` — login page for all users
+- `views/auth/register.php` — registration page
+- `views/user/dashboard.php` — user dashboard with create ticket access
+- `views/agent/dashboard.php` — agent dashboard with assigned tickets
+- `views/admin/index.php` — admin dashboard for ticket assignment and management
+- `views/tickets/create.php` — ticket creation form
+- `views/tickets/ticket-details.php` — ticket conversation page
+- `views/tickets/update.php` — status update page
+- `views/admin/delete.php` — ticket deletion page
+
+---
+
+## 🔧 Notes
+
+- Shared layout components are located in `views/partials/header.php` and `views/partials/footer.php`.
+- Global styles are in `public/css/app.css`.
+- Authentication checks and route access control are handled by `app/middleware/Auth.php` and `app/middleware/login.php`.
+
+---
+
+## 🔮 Future Improvements
+
+- Real-time chat with AJAX or WebSockets
+- Notification system
+- Pagination and advanced filtering
+- File attachments for tickets
+- Improved MVC structure and routing
+- REST API support

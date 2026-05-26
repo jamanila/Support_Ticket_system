@@ -1,16 +1,16 @@
 <?php
-require_once "../../models/Ticket.php";
+require_once __DIR__ . "/../models/Ticket.php";
 
 class Auth{
 
 
     public static function checkRole($role){
         if(!isset($_SESSION["user"])){
-            header("Location: ../errors/401.php");
+            header("Location: /OOP/SupportSystem/views/errors/401.php");
             exit();
         }
         if(!in_array($_SESSION["user"]["role"],$role) ){
-            header("Location: ../errors/403.php");
+            header("Location: /OOP/SupportSystem/views/errors/403.php");
             exit();
         }
         else{
@@ -22,7 +22,7 @@ class Auth{
     public static function canAccessTicket($ticket_id){
         if(!isset($_SESSION["user"])){
             
-            header("Location: ../../errors/401.php");
+            header("Location: /OOP/SupportSystem/views/errors/401.php");
             exit();
         }
         
@@ -37,7 +37,7 @@ class Auth{
             return true;
         }
 
-        header("Location: ../../errors/403.php");
+        header("Location: /OOP/SupportSystem/views/errors/403.php");
         exit();
     }
 }

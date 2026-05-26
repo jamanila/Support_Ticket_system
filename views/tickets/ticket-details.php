@@ -5,10 +5,11 @@ error_reporting(E_ALL);
 
 session_start(); 
 
-require_once("../../models/Comment.php"); 
-require_once("../../models/Ticket.php"); 
-require_once("../../middleware/Auth.php"); 
-require_once("../../models/Notification.php");
+require_once(__DIR__ . "/../../app/models/Comment.php"); 
+require_once(__DIR__ . "/../../app/models/Ticket.php"); 
+require_once(__DIR__ . "/../../app/middleware/Auth.php"); 
+require_once(__DIR__ . "/../../app/models/Notification.php");
+require_once(__DIR__ . "/../../app/models/Users.php");
 
 // ==========================
 // AUTH CHECK
@@ -50,9 +51,15 @@ if (empty($ticket)) {
 Auth::canAccessTicket($ticket_id);
 
 // ==========================
+// MARK RELATED NOTIFICATIONS AS READ
+// ==========================
+$notification = new Notification();
+$notification->markTicketNotificationsAsRead($userId, $ticket_id);
+
+// ==========================
 // MARK AS READ (IMPORTANT FIX)
 // ==========================
-$markRead = $ticketModel->conn->prepare("
+$markRead = $ticketModel->conn->prepare(" 
     INSERT INTO ticket_reads (ticket_id, user_id, last_read_at)
     VALUES (:ticket_id, :user_id, NOW())
     ON DUPLICATE KEY UPDATE last_read_at = NOW()
@@ -71,7 +78,9 @@ $commentModel = new Comment();
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (empty($_POST['message'])) {
-        die('Comment field should not be empty');
+        $_SESSION['flash'][] = ['type' => 'error', 'message' => 'Reply cannot be empty'];
+        header("Location: ticket-details.php?id=" . $ticket_id);
+        exit();
     }
 
     $commentModel->addComment(
@@ -85,6 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // NOTIFICATIONS
     // ==========================
     $notification = new Notification();
+    $usersModel = new Users();
 
     if ($userRole == "user") {
 
@@ -92,8 +102,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $notification->createNotification(
                 $ticket['assigned_to'],
                 $ticket_id,
-                "Customer replied to ticket"
+                "Customer replied to ticket #{$ticket_id}"
             );
+        } else {
+            $admins = $usersModel->getAdmins();
+            foreach ($admins as $admin) {
+                $notification->createNotification(
+                    $admin['id'],
+                    $ticket_id,
+                    "New message from customer on ticket #{$ticket_id}"
+                );
+            }
         }
 
     } elseif ($userRole == "agent") {
@@ -101,7 +120,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $notification->createNotification(
             $ticket['user_id'],
             $ticket_id,
-            "Agent replied to your ticket"
+            "Agent replied to your ticket #{$ticket_id}"
         );
 
     } elseif ($userRole == "admin") {
@@ -109,10 +128,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $notification->createNotification(
             $ticket['user_id'],
             $ticket_id,
-            "Admin replied to your ticket"
+            "Admin replied to your ticket #{$ticket_id}"
         );
+
+        if (!empty($ticket['assigned_to']) && $ticket['assigned_to'] != $ticket['user_id']) {
+            $notification->createNotification(
+                $ticket['assigned_to'],
+                $ticket_id,
+                "Admin replied to ticket #{$ticket_id} assigned to you"
+            );
+        }
     }
 
+    $_SESSION['flash'][] = ['type' => 'success', 'message' => 'Reply posted successfully'];
     header("Location: ticket-details.php?id=" . $ticket_id);
     exit();
 }
@@ -137,9 +165,10 @@ window.onload = function () {
 };
 </script>
 <body style="margin:0;padding:0;background:#05070f;"> 
+    <?php require_once __DIR__ . "/../partials/header.php"; ?>
 
     <!-- MAIN WRAPPER (Radial Gradient Background) --> 
-        
+    <div style="min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:30px;box-sizing:border-box;">
         <!-- CENTRAL CONTENT CONTAINER --> 
         <div style="width:100%;max-width:950px;display:flex;flex-direction:column;gap:18px;"> 
             

@@ -26,7 +26,7 @@ http_response_code(401);
         You must log in before accessing this page.
     </p>
 
-    <a href="/OOP/SupportSystem/middleware/login.php"
+    <a href="/OOP/SupportSystem/app/middleware/login.php"
     style="display:inline-block;margin-top:20px;padding:12px 18px;background:#2563eb;color:white;text-decoration:none;border-radius:10px;font-weight:700;">
         Go to Login
     </a>

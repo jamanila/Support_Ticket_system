@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . "/../config/db.php";
-require_once __DIR__ ."/../middleware/Auth.php";
+require_once __DIR__ . "/../../config/db.php";
+require_once __DIR__ . "/../middleware/Auth.php";
 
 class Ticket {
 
@@ -32,7 +32,12 @@ class Ticket {
         $stmt->bindParam(":status", $this->status);
         $stmt->bindParam(":user_id", $this->user_id);
 
-        return $stmt->execute();
+        if ($stmt->execute()) {
+            $this->id = $this->conn->lastInsertId();
+            return true;
+        }
+
+        return false;
     }
 
     // GET ALL TICKETS with their corresponding creators
@@ -196,37 +201,49 @@ function assignTicketToAgent($ticket_id, $agent_id){
 public function getTicketsWithUnreadCount($user_id){
 
     $stmt = $this->conn->prepare("
+
         SELECT 
             t.*,
             creator.name AS creator_name,
             agent.name AS agent_name,
 
-            COUNT(
-                CASE 
-                    WHEN cr.id IS NULL THEN 1 
-                END
+            (
+                SELECT COUNT(*)
+                FROM comments c
+
+                WHERE c.ticket_id = t.id
+
+                AND c.created_at > COALESCE(
+
+                    (
+                        SELECT tr.last_read_at
+                        FROM ticket_reads tr
+                        WHERE tr.ticket_id = t.id
+                        AND tr.user_id = :user_id
+                    ),
+
+                    '1970-01-01'
+
+                )
+
+                AND c.user_id != :user_id
+
             ) AS unread_count
 
         FROM tickets t
 
-        LEFT JOIN users AS creator 
+        LEFT JOIN users AS creator
             ON t.user_id = creator.id
 
-        LEFT JOIN users AS agent 
+        LEFT JOIN users AS agent
             ON t.assigned_to = agent.id
 
-        LEFT JOIN comments c 
-            ON c.ticket_id = t.id
-
-        LEFT JOIN comment_reads cr 
-            ON cr.comment_id = c.id 
-            AND cr.user_id = :user_id
-
-        GROUP BY t.id
         ORDER BY t.created_at DESC
+
     ");
 
     $stmt->bindParam(":user_id", $user_id);
+
     $stmt->execute();
 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);

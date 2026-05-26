@@ -1,12 +1,16 @@
 <?php 
 session_start(); 
 
-require_once("../../models/Ticket.php"); 
-require_once("../../middleware/Auth.php"); 
+require_once(__DIR__ . "/../../app/models/Ticket.php"); 
+require_once(__DIR__ . "/../../app/models/Users.php"); 
+require_once(__DIR__ . "/../../app/models/Notification.php"); 
+require_once(__DIR__ . "/../../app/middleware/Auth.php"); 
 
 Auth::checkRole(['admin','user']); 
 
 $ticket = new Ticket(); 
+$usersModel = new Users();
+$notificationModel = new Notification();
 $userRole = $_SESSION['user']['role'];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") { 
@@ -16,6 +20,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $ticket->user_id = $_SESSION["user"]["id"]; 
     
     if ($ticket->createTicket()) { 
+        if ($userRole !== "admin") {
+            $admins = $usersModel->getAdmins();
+            foreach ($admins as $admin) {
+                $notificationModel->createNotification(
+                    $admin['id'], 
+                    $ticket->id,
+                    "New ticket created by " . $_SESSION['user']['name']
+                );
+            }
+        }
+
+        // success flash
+        $_SESSION['flash'][] = ['type' => 'success', 'message' => 'Ticket created successfully'];
         if($userRole == "admin"){
             header("Location: ../admin/index.php");
             exit();
@@ -25,13 +42,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             exit();
         }
     } else { 
-        echo "Failed to create ticket"; 
+        $_SESSION['flash'][] = ['type' => 'error', 'message' => 'Failed to create ticket'];
+        header("Location: create.php");
+        exit();
     } 
 } 
 ?>
 
 <!-- MAIN WRAPPER (Centered Card Layout) -->
 <div style="font-family:'Segoe UI',Roboto,Arial,sans-serif; min-height:100vh;display:flex;align-items:center;justify-content:center; background:radial-gradient(circle at top,#0b1220,#05070f);padding:30px;color:#e5e7eb;"> 
+    <?php require_once __DIR__ . "/../partials/header.php"; ?>
     
     <!-- CARD CONTAINER -->
     <div style="width:100%;max-width:520px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); border-radius:18px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,0.5);"> 

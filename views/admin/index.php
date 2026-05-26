@@ -2,22 +2,25 @@
 session_start(); 
 
 if (!isset($_SESSION["user"])) { 
-    header("Location: ../../middleware/login.php"); 
+    header("Location: ../../app/middleware/login.php"); 
         exit(); 
     } 
 
-    require_once "../../middleware/Auth.php"; 
-    require_once "../../models/Ticket.php"; 
-    require_once "../../models/Users.php"; 
+    require_once __DIR__ . "/../../app/middleware/Auth.php"; 
+    require_once __DIR__ . "/../../app/models/Ticket.php"; 
+    require_once __DIR__ . "/../../app/models/Users.php"; 
+    require_once __DIR__ . "/../../app/models/Notification.php";
 
     Auth::checkRole(["admin"]); 
 
     $ticketModel = new Ticket();
-    $userId = $_SESSION['user']['id'];
-    $tickets = $ticketModel->getTicketsWithUnreadCount($userId);
+    $user_id = $_SESSION['user']['id'];
+    $tickets = $ticketModel->getTicketsWithUnreadCount($user_id);
 
     $UserModel = new Users(); 
     $users = $UserModel->getAllUsers(); 
+
+    $notificationModel = new Notification();
 
     // Handle ticket assignment action
     if (isset($_POST['assign_ticket'])) { 
@@ -26,39 +29,115 @@ if (!isset($_SESSION["user"])) {
         
         if (!empty($agent_id)) { 
             $ticketModel->assignTicketToAgent($ticket_id, $agent_id); 
-        } 
+
+            $ticket = $ticketModel->getTicketById($ticket_id);
+            $notificationModel->createNotification(
+                $agent_id,
+                $ticket_id,
+                "A ticket has been assigned to you"
+            );
+            if (!empty($ticket['user_id'])) {
+                $notificationModel->createNotification(
+                    $ticket['user_id'],
+                    $ticket_id,
+                    "Your ticket has been assigned to " . ($ticket['agent_name'] ?? 'an agent')
+                );
+            }
+            $_SESSION['flash'][] = ['type' => 'success', 'message' => 'Ticket assigned'];
+        } else {
+            $_SESSION['flash'][] = ['type' => 'error', 'message' => 'Please select an agent to assign'];
+        }
         
         header("Location: index.php"); 
         exit(); 
     } 
-
-
-    /* ========================= KPI CALCULATIONS ========================= */ 
-    $totalTickets = count($tickets); 
-    $openTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'open')); 
-    $inProgressTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'in_progress')); 
-    $closedTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'closed')); 
-    ?>
-
-<!-- MAIN WRAPPER -->
-<div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;background:radial-gradient(circle at top,#0b1220,#05070f);min-height:100vh;padding:30px;color:#e5e7eb;">
     
-    <!-- SECTION 1: HEADER -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;">
-        <div>
-            <h2 style="margin:0;font-size:24px;font-weight:800;">🛠 Admin Control Center</h2>
-            <p style="margin:5px 0 0;color:#94a3b8;font-size:13px;">
-                Ticket system overview & management
-            </p>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center;">
-            <div style="padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:13px;">
-                👤 <?= htmlspecialchars($_SESSION["user"]["name"]) ?>
+    //get unread notification
+    $unReadNotifications = $notificationModel->getUnreadTicketNotificationsCount($user_id);
+    $unreadTicketAlerts = $notificationModel->getUnreadTicketNotifications($user_id, 6);
+    $latestNotifications = $notificationModel->getLatestNotifications($user_id, 5);
+
+    /* ========================= KPI CALCULATIONS ========================= */
+    $totalTickets = count($tickets);
+    $openTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'open'));
+    $inProgressTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'in_progress'));
+    $closedTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'closed'));
+?>
+<div>
+    <?php require_once __DIR__ . "/../partials/header.php"; ?>
+</div>
+<div style="font-family:'Segoe UI',Roboto,Arial,sans-serif;background:radial-gradient(circle at top,#0b1220,#05070f);min-height:100vh;padding:30px;color:#e5e7eb;">
+    <div style="max-width:1200px;margin:0 auto;">
+        <div style="background:rgba(15,23,42,0.92);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:28px;box-shadow:0 30px 80px rgba(0,0,0,0.35);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;">
+
+    <!-- LEFT SIDE -->
+    <div>
+        <h2 style="margin:0;font-size:24px;font-weight:800;">🛠 Admin Control Center</h2>
+        <p style="margin:5px 0 0;color:#94a3b8;font-size:13px;">
+            Ticket system overview & management
+        </p>
+    </div>
+
+    <!-- RIGHT SIDE (GROUPED PROPERLY) -->
+    <div style="display:flex;gap:10px;align-items:center;margin-left:auto;">
+
+        <!-- NOTIFICATION -->
+        <div id="notificationBell" style="position:relative;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:13px;cursor:pointer;">
+            🔔 Notifications
+            <?php if($unReadNotifications > 0): ?>
+                <span style="position:absolute;top:-6px;right:-6px;background:red;color:white;font-size:10px;padding:3px 6px;border-radius:999px;font-weight:700;">
+                    <?= $unReadNotifications ?>
+                </span>
+            <?php endif; ?>
+            <div id="notificationDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 12px);width:340px;max-height:370px;overflow:auto;background:rgba(15,23,42,0.98);border:1px solid rgba(255,255,255,0.1);box-shadow:0 18px 50px rgba(0,0,0,0.35);border-radius:18px;z-index:20;padding:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div style="font-size:14px;font-weight:700;color:#e2e8f0;">Unread ticket alerts</div>
+                    <span style="font-size:12px;color:#94a3b8;"><?= $unReadNotifications ?> new</span>
+                </div>
+                <?php if(empty($unreadTicketAlerts)): ?>
+                    <div style="color:#94a3b8;font-size:13px;padding:14px 12px;">No ticket notification alerts.</div>
+                <?php else: ?>
+                    <?php foreach($unreadTicketAlerts as $alert): ?>
+                        <a href="../tickets/ticket-details.php?id=<?= htmlspecialchars($alert['ticket_id']) ?>" style="display:block;padding:12px 14px;margin-bottom:10px;border-radius:14px;background:rgba(255,255,255,0.03);text-decoration:none;color:#f8fafc;">
+                            <div style="font-size:13px;font-weight:600;line-height:1.4;"><?= htmlspecialchars($alert['message']) ?></div>
+                            <div style="font-size:11px;color:#94a3b8;margin-top:6px;"><?= date('M d, Y H:i', strtotime($alert['created_at'])) ?></div>
+                        </a>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
-            <a href="/OOP/SupportSystem/middleware/login.php" style="background:#ef4444;color:white;padding:10px 14px;border-radius:10px;text-decoration:none;font-weight:600;font-size:13px;">
-                Logout
-            </a>
         </div>
+
+        <!-- USER -->
+        <div style="padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:13px;">
+            👤 <?= htmlspecialchars($_SESSION["user"]["name"]) ?>
+        </div>
+
+        <!-- LOGOUT -->
+        <a href="/OOP/SupportSystem/app/middleware/login.php"
+           style="background:#ef4444;color:white;padding:10px 14px;border-radius:10px;text-decoration:none;font-weight:600;font-size:13px;">
+            Logout
+        </a>
+    </div>
+
+</div>
+
+    <!-- SECTION 1.5: RECENT NOTIFICATIONS -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div style="font-size:15px;font-weight:700;color:#e2e8f0;">Latest Notifications</div>
+            <div style="font-size:12px;color:#94a3b8;">Showing up to 5</div>
+        </div>
+        <?php if(empty($latestNotifications)): ?>
+            <div style="color:#94a3b8;font-size:13px;">No recent notifications.</div>
+        <?php else: ?>
+            <?php foreach($latestNotifications as $note): ?>
+                <div style="padding:12px;border-radius:12px;margin-bottom:10px;background:rgba(255,255,255,0.04);display:flex;justify-content:space-between;gap:12px;align-items:center;">
+                    <div style="font-size:13px;color:#f8fafc;"><?= htmlspecialchars($note['message']) ?></div>
+                    <div style="font-size:11px;color:#94a3b8;min-width:120px;text-align:right;"><?= date("M d, Y H:i", strtotime($note['created_at'])) ?></div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 
     <!-- SECTION 2: SEARCH + ACTION BAR -->
@@ -188,16 +267,17 @@ if (!isset($_SESSION["user"])) {
                                 <a href="../tickets/ticket-details.php?id=<?= $t['id'] ?>" style="background:#10b981;color:white;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">
                                     View
                                 </a>
-                                <?php if($t['unread_count'] > 0): ?>
-                                    <span style="background:red;color:white;padding:3px 7px;border-radius:999px;font-size:11px;">
-                                        <?= $t['unread_count'] ?> new
-                                    </span>
-                                <?php else: ?>
-                                    <span style="color:#22c55e;font-size:11px;">
-                                        read
+                                    <?php if($t['unread_count'] > 0): ?>
+                                    <span style="
+                                        background:#ef4444;
+                                        color:white;
+                                        padding:4px 8px;
+                                        border-radius:999px;
+                                        font-size:11px;
+                                        font-weight:700;">
+                                        NEW <?= $t['unread_count'] ?>
                                     </span>
                                 <?php endif; ?>
-                                
                             <?php else: ?>
                                 <span style="color:#22c55e;font-weight:700;font-size:13px;">
                                     Resolved
@@ -213,6 +293,8 @@ if (!isset($_SESSION["user"])) {
             </tbody>
         </table>
     </div>
+</div>
+</div>
 </div>
 
 <!-- CLIENT RE-FILTER SCRIPT -->
@@ -233,4 +315,24 @@ function filterTickets(){
         }
     });
 }
+
+(function(){
+    const bell = document.getElementById('notificationBell');
+    const dropdown = document.getElementById('notificationDropdown');
+
+    if(!bell || !dropdown) return;
+
+    bell.addEventListener('click', function(event){
+        event.stopPropagation();
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    });
+
+    dropdown.addEventListener('click', function(event){
+        event.stopPropagation();
+    });
+
+    document.addEventListener('click', function(){
+        dropdown.style.display = 'none';
+    });
+})();
 </script>

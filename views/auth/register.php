@@ -3,7 +3,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-require_once "../models/Users.php";
+session_start();
+require_once __DIR__ . "/../../app/models/Users.php";
 
 if($_SERVER['REQUEST_METHOD'] == "POST"){
 
@@ -21,11 +22,14 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
     $user->role = $_POST['role'];
 
     if($user->createUser()){
-        header("Location: /OOP/SupportSystem/middleware/register.php");
+        $_SESSION['flash'][] = ['type' => 'success', 'message' => 'Account created. Please log in.'];
+        header("Location: /OOP/SupportSystem/app/middleware/login.php");
+        exit();
 
     } else {
-
-        echo "Failed to create user";
+        $_SESSION['flash'][] = ['type' => 'error', 'message' => 'Failed to create account'];
+        header("Location: register.php");
+        exit();
     }
 }
 ?>
@@ -35,6 +39,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 <head>
     <meta charset="UTF-8">
     <title>Register</title>
+    <?php require_once __DIR__ . "/../partials/header.php"; ?>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
 
