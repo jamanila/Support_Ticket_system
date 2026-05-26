@@ -205,8 +205,9 @@ window.onload = function () {
                     </a>
 
                     <?php endif; ?> 
+                    
                     <button style="background:#ef4444;border:none;color:white;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer;"> 
-                        Close Ticket 
+                        Close Ticket (//to be implemented)
                     </button> 
                 </div> 
             </div> 

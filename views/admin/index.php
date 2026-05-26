@@ -15,7 +15,8 @@ if (!isset($_SESSION["user"])) {
 
     $ticketModel = new Ticket();
     $user_id = $_SESSION['user']['id'];
-    $tickets = $ticketModel->getTicketsWithUnreadCount($user_id);
+    $perPage = 10;
+    $page = max(1, (int)($_GET['page'] ?? 1));
 
     $UserModel = new Users(); 
     $users = $UserModel->getAllUsers(); 
@@ -57,11 +58,7 @@ if (!isset($_SESSION["user"])) {
     $unreadTicketAlerts = $notificationModel->getUnreadTicketNotifications($user_id, 6);
     $latestNotifications = $notificationModel->getLatestNotifications($user_id, 5);
 
-    /* ========================= KPI CALCULATIONS ========================= */
-    $totalTickets = count($tickets);
-    $openTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'open'));
-    $inProgressTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'in_progress'));
-    $closedTickets = count(array_filter($tickets, fn($t) => $t['status'] === 'closed'));
+    $tickets = $ticketModel->getTicketsWithUnreadCount($user_id);
 ?>
 <div>
     <?php require_once __DIR__ . "/../partials/header.php"; ?>
@@ -123,22 +120,7 @@ if (!isset($_SESSION["user"])) {
 </div>
 
     <!-- SECTION 1.5: RECENT NOTIFICATIONS -->
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px;margin-bottom:20px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <div style="font-size:15px;font-weight:700;color:#e2e8f0;">Latest Notifications</div>
-            <div style="font-size:12px;color:#94a3b8;">Showing up to 5</div>
-        </div>
-        <?php if(empty($latestNotifications)): ?>
-            <div style="color:#94a3b8;font-size:13px;">No recent notifications.</div>
-        <?php else: ?>
-            <?php foreach($latestNotifications as $note): ?>
-                <div style="padding:12px;border-radius:12px;margin-bottom:10px;background:rgba(255,255,255,0.04);display:flex;justify-content:space-between;gap:12px;align-items:center;">
-                    <div style="font-size:13px;color:#f8fafc;"><?= htmlspecialchars($note['message']) ?></div>
-                    <div style="font-size:11px;color:#94a3b8;min-width:120px;text-align:right;"><?= date("M d, Y H:i", strtotime($note['created_at'])) ?></div>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </div>
+
 
     <!-- SECTION 2: SEARCH + ACTION BAR -->
     <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
@@ -154,28 +136,28 @@ if (!isset($_SESSION["user"])) {
         <div style="flex:1;min-width:200px;background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:16px;">
             <div style="font-size:13px;color:#93c5fd;">Total Tickets</div>
             <div style="font-size:26px;font-weight:800;margin-top:6px;">
-                <?= $totalTickets ?>
+                <?= count($tickets) ?>
             </div>
         </div>
         <!-- Open -->
         <div style="flex:1;min-width:200px;background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.2);border-radius:14px;padding:16px;">
             <div style="font-size:13px;color:#fbbf24;">Open</div>
             <div style="font-size:26px;font-weight:800;margin-top:6px;">
-                <?= $openTickets ?>
+                <?= count(array_filter($tickets, fn($t) => $t['status'] === 'open')) ?>
             </div>
         </div>
         <!-- In Progress -->
         <div style="flex:1;min-width:200px;background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:16px;">
             <div style="font-size:13px;color:#60a5fa;">In Progress</div>
             <div style="font-size:26px;font-weight:800;margin-top:6px;">
-                <?= $inProgressTickets ?>
+                <?= count(array_filter($tickets, fn($t) => $t['status'] === 'in_progress')) ?>
             </div>
         </div>
         <!-- Closed -->
         <div style="flex:1;min-width:200px;background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.2);border-radius:14px;padding:16px;">
             <div style="font-size:13px;color:#34d399;">Closed</div>
             <div style="font-size:26px;font-weight:800;margin-top:6px;">
-                <?= $closedTickets ?>
+                <?= count(array_filter($tickets, fn($t) => $t['status'] === 'closed')) ?>
             </div>
         </div>
     </div>
@@ -267,7 +249,7 @@ if (!isset($_SESSION["user"])) {
                                 <a href="../tickets/ticket-details.php?id=<?= $t['id'] ?>" style="background:#10b981;color:white;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">
                                     View
                                 </a>
-                                    <?php if($t['unread_count'] > 0): ?>
+                                <?php if($t['unread_count'] > 0): ?>
                                     <span style="
                                         background:#ef4444;
                                         color:white;
@@ -293,6 +275,8 @@ if (!isset($_SESSION["user"])) {
             </tbody>
         </table>
     </div>
+    
+</div>
 </div>
 </div>
 </div>

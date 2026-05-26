@@ -60,9 +60,9 @@ class Ticket {
 
 //this function gets all tickets assigned to agent. (agents open their dashboard and interact with tickets assigned to them)
 
-function getTicketsForAgent($agent_id){
+function getTicketsForAgent($agent_id, $limit = null, $offset = 0){
 
-    $stmt = $this->conn->prepare("
+    $query = "
         SELECT 
             t.*,
             creator.name AS creator_name,
@@ -80,7 +80,14 @@ function getTicketsForAgent($agent_id){
                     ),
                     '1970-01-01'
                 )
-            ) AS unread_count
+            ) AS unread_count,
+
+            (
+                SELECT MAX(n.created_at)
+                FROM notifications n
+                WHERE n.ticket_id = t.id
+                AND n.user_id = :agent_id
+            ) AS last_notification_at
 
         FROM tickets t
 
@@ -89,14 +96,31 @@ function getTicketsForAgent($agent_id){
 
         WHERE t.assigned_to = :agent_id
 
-        ORDER BY t.created_at DESC
-    ");
+        ORDER BY unread_count DESC, last_notification_at DESC, t.created_at DESC
+    ";
 
+    if ($limit !== null) {
+        $query .= " LIMIT :limit OFFSET :offset";
+    }
+
+    $stmt = $this->conn->prepare($query);
     $stmt->bindParam(":agent_id", $agent_id);
+
+    if ($limit !== null) {
+        $stmt->bindValue(":limit", (int) $limit, PDO::PARAM_INT);
+        $stmt->bindValue(":offset", (int) $offset, PDO::PARAM_INT);
+    }
 
     $stmt->execute();
 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+public function countTicketsForAgent($agent_id){
+    $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM tickets WHERE assigned_to = :agent_id");
+    $stmt->bindParam(":agent_id", $agent_id);
+    $stmt->execute();
+    return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 }
 
 public function getTicketsForUser($user_id){
@@ -119,6 +143,13 @@ public function getTicketsForUser($user_id){
     $stmt->execute();
 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+public function countTicketsForUser($user_id){
+    $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM tickets WHERE user_id = :user_id");
+    $stmt->bindParam(":user_id", $user_id);
+    $stmt->execute();
+    return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 }
 //role based tickets
 function getTickets(){
@@ -198,9 +229,9 @@ function assignTicketToAgent($ticket_id, $agent_id){
         return $ticket;;
     }
 
-public function getTicketsWithUnreadCount($user_id){
+public function getTicketsWithUnreadCount($user_id, $limit = null, $offset = 0){
 
-    $stmt = $this->conn->prepare("
+    $query = "
 
         SELECT 
             t.*,
@@ -228,7 +259,14 @@ public function getTicketsWithUnreadCount($user_id){
 
                 AND c.user_id != :user_id
 
-            ) AS unread_count
+            ) AS unread_count,
+
+            (
+                SELECT MAX(n.created_at)
+                FROM notifications n
+                WHERE n.ticket_id = t.id
+                AND n.user_id = :user_id
+            ) AS last_notification_at
 
         FROM tickets t
 
@@ -238,14 +276,144 @@ public function getTicketsWithUnreadCount($user_id){
         LEFT JOIN users AS agent
             ON t.assigned_to = agent.id
 
-        ORDER BY t.created_at DESC
+        ORDER BY unread_count DESC, last_notification_at DESC, t.created_at DESC
 
-    ");
+    ";
 
+    if ($limit !== null) {
+        $query .= " LIMIT :limit OFFSET :offset";
+    }
+
+    $stmt = $this->conn->prepare($query);
     $stmt->bindParam(":user_id", $user_id);
+
+    if ($limit !== null) {
+        $stmt->bindValue(":limit", (int) $limit, PDO::PARAM_INT);
+        $stmt->bindValue(":offset", (int) $offset, PDO::PARAM_INT);
+    }
 
     $stmt->execute();
 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+public function getTicketsWithUnreadCountForUser($user_id, $limit = null, $offset = 0){
+
+    $query = "
+
+        SELECT 
+            t.*,
+            creator.name AS creator_name,
+            agent.name AS agent_name,
+
+            (
+                SELECT COUNT(*)
+                FROM comments c
+
+                WHERE c.ticket_id = t.id
+
+                AND c.created_at > COALESCE(
+
+                    (
+                        SELECT tr.last_read_at
+                        FROM ticket_reads tr
+                        WHERE tr.ticket_id = t.id
+                        AND tr.user_id = :user_id
+                    ),
+
+                    '1970-01-01'
+
+                )
+
+                AND c.user_id != :user_id
+
+            ) AS unread_count,
+
+            (
+                SELECT MAX(n.created_at)
+                FROM notifications n
+                WHERE n.ticket_id = t.id
+                AND n.user_id = :user_id
+            ) AS last_notification_at
+
+        FROM tickets t
+
+        LEFT JOIN users AS creator
+            ON t.user_id = creator.id
+
+        LEFT JOIN users AS agent
+            ON t.assigned_to = agent.id
+
+        WHERE t.user_id = :user_id
+
+        ORDER BY unread_count DESC, last_notification_at DESC, t.created_at DESC
+
+    ";
+
+    if ($limit !== null) {
+        $query .= " LIMIT :limit OFFSET :offset";
+    }
+
+    $stmt = $this->conn->prepare($query);
+    $stmt->bindParam(":user_id", $user_id);
+
+    if ($limit !== null) {
+        $stmt->bindValue(":limit", (int) $limit, PDO::PARAM_INT);
+        $stmt->bindValue(":offset", (int) $offset, PDO::PARAM_INT);
+    }
+
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+public function countTickets(){
+    $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM tickets");
+    $stmt->execute();
+    return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+}
+
+public function countTicketsByStatus($status){
+    $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM tickets WHERE status = :status");
+    $stmt->bindParam(":status", $status);
+    $stmt->execute();
+    return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+}
+
+public function getTicketCountsForUser($user_id){
+    $stmt = $this->conn->prepare("SELECT 
+            COUNT(*) AS total,
+            SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS open_count,
+            SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_count,
+            SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) AS closed_count
+        FROM tickets
+        WHERE user_id = :user_id");
+    $stmt->bindParam(":user_id", $user_id);
+    $stmt->execute();
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+public function getTicketCountsForAgent($agent_id){
+    $stmt = $this->conn->prepare("SELECT 
+            COUNT(*) AS total,
+            SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS open_count,
+            SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_count,
+            SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) AS closed_count
+        FROM tickets
+        WHERE assigned_to = :agent_id");
+    $stmt->bindParam(":agent_id", $agent_id);
+    $stmt->execute();
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+public function getTicketCounts(){
+    $stmt = $this->conn->prepare("SELECT 
+            COUNT(*) AS total,
+            SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS open_count,
+            SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_count,
+            SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) AS closed_count
+        FROM tickets");
+    $stmt->execute();
+    return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 }

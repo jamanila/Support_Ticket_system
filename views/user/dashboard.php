@@ -10,13 +10,14 @@ require_once __DIR__ . "/../../app/middleware/Auth.php";
 require_once __DIR__ . "/../../app/models/Ticket.php"; 
 require_once __DIR__ . "/../../app/models/Notification.php";
 Auth::checkRole(['admin', 'user']);
-$ticketModel = new Ticket(); 
-$notificationModel = new Notification();
-$user_id = $_SESSION["user"]["id"]; 
-$unReadNotifications = $notificationModel->getUnreadNotificationCount($user_id);
-/* Fetch user tickets */ 
-$tickets = $ticketModel->getTicketsForUser($user_id); 
+ $ticketModel = new Ticket(); 
+ $notificationModel = new Notification();
+ $user_id = $_SESSION["user"]["id"]; 
+
+ $tickets = $ticketModel->getTicketsWithUnreadCountForUser($user_id);
+ $unReadNotifications = $notificationModel->getUnreadNotificationCount($user_id);
 ?>
+
 <?php require_once __DIR__ . "/../partials/header.php"; ?>
 
 <!-- MAIN WRAPPER -->
@@ -34,10 +35,11 @@ $tickets = $ticketModel->getTicketsForUser($user_id);
             <a href="../tickets/create.php" style="background:#3b82f6;color:white;padding:10px 14px;border-radius:10px;text-decoration:none;font-weight:600;font-size:13px;">
                 + New Ticket
             </a>
-            <div style="position:relative;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:13px;">
-                🔔
+            <div style="position:relative;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:13px;display:flex;align-items:center;gap:6px;">
+                💬
+                <span style="color:#e5e7eb;">Ticket chats</span>
                 <?php if($unReadNotifications > 0): ?>
-                    <span style="position:absolute;top:-5px;right:-7px;background:red;color:white;font-size:10px;padding:3px 6px;border-radius:999px;font-weight:700;">
+                    <span style="position:absolute;top:-5px;right:-7px;background:#22c55e;color:white;font-size:10px;padding:3px 6px;border-radius:999px;font-weight:700;">
                         <?= $unReadNotifications ?>
                     </span>
                 <?php endif; ?>
@@ -135,13 +137,18 @@ $tickets = $ticketModel->getTicketsForUser($user_id);
                         </td>
                         
                         <!-- Action Links -->
-                        <td class="col-actions">
+                        <td style="padding:12px;display:flex;align-items:center;gap:8px;">
                             <a class="action-btn action-btn--view" href="../tickets/ticket-details.php?id=<?= $t['id'] ?>" title="View" aria-label="View ticket <?= $t['id'] ?>">👁</a>
+                            <?php if(!empty($t['unread_count']) && $t['unread_count'] > 0): ?>
+                                <span style="background:#2563eb;color:white;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:700;">+<?= $t['unread_count'] ?> new</span>
+                            <?php endif; ?>
+                            
                         </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
+        
     </div>
 </div>
 <script>

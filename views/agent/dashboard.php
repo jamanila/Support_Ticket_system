@@ -13,6 +13,7 @@ $ticketModel = new Ticket();
 $notificationModel = new Notification(); 
 $agent_id = $_SESSION["user"]["id"]; 
 Auth::checkRole(['admin','agent']);
+
 /* Handle status update action */ 
 if (isset($_POST['update_status'])) { 
     $ticket_id = $_POST['ticket_id']; 
@@ -166,13 +167,13 @@ $tickets = $ticketModel->getTicketsForAgent($agent_id);
                                     <option value="closed" <?= $t['status'] === 'closed' ? 'selected' : '' ?>>Closed</option>
                                 </select>
 
-                                <a class="action-btn action-btn--view" href="../tickets/ticket-details.php?id=<?= $t['id'] ?>" title="View" aria-label="View ticket <?= $t['id'] ?>">👁</a>
-
+                                <!-- <a class="action-btn action-btn--view" href="../tickets/ticket-details.php?id=<?= $t['id'] ?>" title="View" aria-label="View ticket <?= $t['id'] ?>" style="background:#3b82f6;color:white;padding:8px 12px;border-radius:10px;text-decoration:none;font-size:12px;font-weight:700;">👁</a> -->
+                                <a href="../tickets/ticket-details.php?id=<?= $t['id'] ?>" style="background:#10b981;color:white;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;margin-right:6px;">View</a>
                                 <?php if($t['unread_count'] > 0): ?>
-                                    <span class="badge-small"><?= $t['unread_count'] ?> new</span>
+                                    <span style="background:#ef4444;color:white;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700;">NEW <?= $t['unread_count'] ?></span>
                                 <?php endif; ?>
 
-                                <button type="submit" name="update_status" class="action-btn action-btn--update" title="Update" aria-label="Update ticket <?= $t['id'] ?>">
+                                <button type="submit" name="update_status" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;border:none;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
                                     Update
                                 </button>
                             </form>
