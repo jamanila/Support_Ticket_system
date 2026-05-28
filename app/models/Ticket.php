@@ -7,6 +7,7 @@ class Ticket {
     public $id;
     public $title;
     public $description;
+    public $attachment;
     public $status = "open";
     public $created_at;
     public $user_id;
@@ -31,35 +32,13 @@ class Ticket {
         $stmt->bindParam(":description", $this->description);
         $stmt->bindParam(":status", $this->status);
         $stmt->bindParam(":user_id", $this->user_id);
-
         if ($stmt->execute()) {
             $this->id = $this->conn->lastInsertId();
-            return true;
+            return $this->id;
         }
 
         return false;
     }
-
-    // GET ALL TICKETS with their corresponding creators
-// function getAllTickets(){
-//     $stmt = $this->conn->prepare("
-//         SELECT 
-//             tickets.*,
-//             creator.name AS creator_name,
-//             agent.name AS agent_name
-//         FROM tickets
-//         LEFT JOIN users AS creator 
-//             ON tickets.user_id = creator.id
-//         LEFT JOIN users AS agent 
-//             ON tickets.assigned_to = agent.id
-//         ORDER BY created_at DESC
-//     ");
-//     $stmt->execute();
-//     return $stmt->fetchAll(PDO::FETCH_ASSOC);
-// }
-
-//this function gets all tickets assigned to agent. (agents open their dashboard and interact with tickets assigned to them)
-
 function getTicketsForAgent($agent_id, $limit = null, $offset = 0){
 
     $query = "
@@ -416,4 +395,6 @@ public function getTicketCounts(){
     $stmt->execute();
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
+
+
 }
