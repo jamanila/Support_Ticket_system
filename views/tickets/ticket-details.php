@@ -1,4 +1,3 @@
-```php
 <?php 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -181,358 +180,320 @@ $attachments = $attachmentModel->getByTicketId($ticket_id);
 <html lang="en"> 
 
 <head> 
-
     <meta charset="UTF-8"> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-
     <title>Ticket Conversation</title> 
-
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #090d16;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1) !important;
+            border-color: rgba(255,255,255,0.2) !important;
+        }
+        .btn-danger:hover {
+            background: #dc2626 !important;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg,#2563eb,#1d4ed8) !important;
+        }
+        .input-focus:focus {
+            border-color: rgba(59,130,246,0.6) !important;
+            background: rgba(255,255,255,0.06) !important;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+        /* Custom dynamic scrollbar for modern chat look */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 99px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
 </head> 
 
 <script>
 window.onload = function () {
     const chatBox = document.getElementById("chat-box");
-    const replyTextarea = document.querySelector('textarea[name="message"]');
     const AUTO_RELOAD_INTERVAL_MS = 5000; // Reload every 5 seconds
 
     if (chatBox) {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // Schedule a page reload unless the user is actively typing a reply.
-    function scheduleReload() {
-        const isReplyFocused = document.activeElement === replyTextarea;
-        const hasReplyDraft = replyTextarea && replyTextarea.value.trim() !== '';
-
-        if (!replyTextarea || !hasReplyDraft || !isReplyFocused) {
-            setTimeout(function () {
-                window.location.reload();
-            }, AUTO_RELOAD_INTERVAL_MS);
-        } else {
-            // Keep waiting while the user is composing a reply.
-            setTimeout(scheduleReload, AUTO_RELOAD_INTERVAL_MS);
-        }
+    function isUserTyping() {
+        const active = document.activeElement;
+        if (!active) return false;
+        const tag = active.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+        if (active.isContentEditable) return true;
+        return false;
     }
 
-    scheduleReload();
+    async function refresh() {
+        if (isUserTyping()) {
+            setTimeout(refresh, AUTO_RELOAD_INTERVAL_MS);
+            return;
+        }
+
+        try {
+            const res = await fetch(window.location.href, { cache: 'no-store' });
+            const text = await res.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'text/html');
+            const newContainer = doc.getElementById('app-refresh');
+            const current = document.getElementById('app-refresh');
+            if (newContainer && current) {
+                // Read current scroll positioning before injection
+                const wasAtBottom = chatBox && (chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < 40);
+
+                current.innerHTML = newContainer.innerHTML;
+                
+                // Keep viewport scrolled downward if user was monitoring old history updates
+                const newChatBox = document.getElementById("chat-box");
+                if (newChatBox && wasAtBottom) {
+                    newChatBox.scrollTop = newChatBox.scrollHeight;
+                }
+
+                const scripts = Array.from(newContainer.querySelectorAll('script'));
+                scripts.forEach(s => {
+                    const ns = document.createElement('script');
+                    if (s.src) ns.src = s.src;
+                    ns.text = s.textContent;
+                    document.body.appendChild(ns);
+                    document.body.removeChild(ns);
+                });
+            }
+        } catch (e) {}
+
+        setTimeout(refresh, AUTO_RELOAD_INTERVAL_MS);
+    }
+
+    setTimeout(refresh, AUTO_RELOAD_INTERVAL_MS);
 };
 </script>
 
-<body style="margin:0;padding:0;background:#05070f;"> 
+<body> 
 
 <?php require_once __DIR__ . "/../partials/header.php"; ?>
 
-<!-- MAIN WRAPPER -->
-<div style="min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:30px;box-sizing:border-box;">
+<div style="height: 100vh; display: flex; justify-content: center; align-items: stretch; padding: 20px; box-sizing: border-box;">
+    <div id="app-refresh" style="width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 16px; height: 100%;">
 
-    <!-- CENTRAL CONTENT -->
-    <div style="width:100%;max-width:950px;display:flex;flex-direction:column;gap:18px;"> 
-
-        <!-- TOP BAR -->
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;"> 
-
-            <div> 
-
-                <div style="font-size:26px;font-weight:800;color:white;"> 
-                    🎫 Ticket Conversation 
-                </div> 
-
-                <div style="font-size:13px;color:#94a3b8;margin-top:5px;"> 
-                    <?= htmlspecialchars($ticket['title']) ?>
-                </div> 
-
-            </div> 
-
-            <div style="display:flex;gap:10px;align-items:center;"> 
-
-                <?php if($user['role'] == "admin"): ?>
-
-                    <a href="../admin/index.php"
-                    style="display:inline-block;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer;text-decoration:none;">
-                        ← Back
-                    </a>
-
-                <?php elseif($user['role'] == "agent"): ?>
-
-                    <a href="agent.php"
-                    style="display:inline-block;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer;text-decoration:none;">
-                        ← Back
-                    </a>
-
-                <?php else: ?>
-
-                    <a href="user.php"
-                    style="display:inline-block;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer;text-decoration:none;">
-                        ← Back
-                    </a>
-
-                <?php endif; ?>
-
-                <button style="background:#ef4444;border:none;color:white;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer;"> 
-                    Close Ticket
-                </button> 
-
-            </div> 
-
-        </div> 
-
-        <!-- META CARD -->
-        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);border-radius:18px;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,0.35);"> 
-
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;"> 
-
+        <div style="flex-shrink: 0; display: flex; flex-direction: column; gap: 16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;"> 
                 <div> 
+                    <div style="font-size:24px;font-weight:800;color:white;letter-spacing:-0.5px;display:flex;align-items:center;gap:10px;"> 
+                        <span>🎫</span> Ticket Conversation 
+                    </div> 
+                    <div style="font-size:14px;color:#94a3b8;margin-top:4px;font-weight:400;"> 
+                        <?= htmlspecialchars($ticket['title']) ?>
+                    </div> 
+                </div> 
 
-                    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:#94a3b8;"> 
+                <div style="display:flex;gap:12px;align-items:center;"> 
+                    <?php if($user['role'] == "admin"): ?>
+                        <a href="../admin/index.php" class="btn-secondary"
+                        style="display:inline-block;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;padding:10px 18px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.2s ease;">
+                            &larr; Back
+                        </a>
+                    <?php elseif($user['role'] == "agent"): ?>
+                        <a href="agent.php" class="btn-secondary"
+                        style="display:inline-block;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;padding:10px 18px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.2s ease;">
+                            &larr; Back
+                        </a>
+                    <?php else: ?>
+                        <a href="user.php" class="btn-secondary"
+                        style="display:inline-block;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;padding:10px 18px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.2s ease;">
+                            &larr; Back
+                        </a>
+                    <?php endif; ?>
 
-                        <div>
-                            👤 Created by:
-                            <?= htmlspecialchars($ticket['creator_name']) ?>
+                    <button class="btn-danger" style="background:#ef4444;border:none;color:white;padding:10px 18px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s ease;box-shadow:0 4px 12px rgba(239,68,68,0.2);"> 
+                        Close Ticket
+                    </button> 
+                </div> 
+            </div> 
+
+            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(16px);border-radius:16px;padding:16px;box-shadow:0 4px 30px rgba(0,0,0,0.2);"> 
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;"> 
+                    <div> 
+                        <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;color:#94a3b8;"> 
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <span style="opacity:0.7;">👤 Creator:</span>
+                                <strong style="color:#f1f5f9;"><?= htmlspecialchars($ticket['creator_name']) ?></strong>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <span style="opacity:0.7;">👨‍💻 Assigned to:</span>
+                                <strong style="color:#f1f5f9;">
+                                    <?php if(!empty($ticket["agent_name"])): ?>
+                                        <?= htmlspecialchars($ticket["agent_name"]) ?>
+                                    <?php else: ?>
+                                        <span style="color:#f87171;font-weight:500;background:rgba(248,113,113,0.1);padding:2px 8px;border-radius:6px;">Unassigned</span>
+                                    <?php endif; ?>
+                                </strong>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <span style="opacity:0.7;">📅 Date:</span>
+                                <span style="color:#f1f5f9;"><?= htmlspecialchars($ticket["created_at"]) ?></span>
+                            </div>
                         </div>
-
-                        <div>
-                            👨‍💻 Assigned to:
-
-                            <?php if(!empty($ticket["agent_name"])): ?>
-
-                                <?= htmlspecialchars($ticket["agent_name"]) ?>
-
-                            <?php else: ?>
-
-                                <span style="color:red;">Not assigned yet</span>
-
-                            <?php endif; ?>
-                        </div>
-
-                        <div>
-                            📅 <?= htmlspecialchars($ticket["created_at"]) ?>
-                        </div>
-
                     </div>
 
+                    <div style="padding:6px 14px;border-radius:8px;background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.2);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;"> 
+                        <?= htmlspecialchars($ticket['status']) ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="flex: 1; min-height: 0; background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.05); border-radius:24px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.3); display: flex; flex-direction: column;">
+            
+            <div id="chat-box" class="custom-scrollbar" style="flex: 1; overflow-y:auto; padding:30px; display:flex; flex-direction:column; gap:24px; background:rgba(10,15,30,0.4); box-sizing:border-box;">
+
+                <div style="display:flex;justify-content:flex-start;width:100%;">
+                    <div style="max-width:80%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);padding:20px;border-radius:4px 20px 20px 20px;box-shadow:0 4px 15px rgba(0,0,0,0.15);">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:30px;">
+                            <div style="font-size:13px;font-weight:700;color:#f1f5f9;display:flex;align-items:center;gap:6px;">
+                                <div style="width:8px;height:8px;border-radius:50%;background:#10b981;"></div>
+                                <?= htmlspecialchars($ticket['creator_name']) ?> <span style="font-weight:400;color:#64748b;font-size:11px;">(Author)</span>
+                            </div>
+                            <div style="font-size:11px;color:#64748b;font-weight:500;">
+                                <?= $ticket['created_at'] ?>
+                            </div>
+                        </div>
+
+                        <div style="font-size:16px;font-weight:700;color:white;margin-bottom:12px;letter-spacing:-0.2px;">
+                            📌 <?= htmlspecialchars($ticket['title']) ?>
+                        </div>
+
+                        <?php if(!empty($attachments)): ?>
+                            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+                                <?php foreach($attachments as $file): ?>
+                                    <?php
+                                        $extension = strtolower(pathinfo($file['file_name'], PATHINFO_EXTENSION));
+                                        $isImage = in_array($extension, ['jpg','jpeg','png','gif','webp']);
+                                    ?>
+                                    <?php if($isImage): ?>
+                                        <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);transition:transform 0.2s;">
+                                            <a href="/OOP/SupportSystem/<?= htmlspecialchars($file['file_path']) ?>" target="_blank" style="display:block;">
+                                                <img src="/OOP/SupportSystem/<?= htmlspecialchars($file['file_path']) ?>" style="width:160px;height:110px;object-fit:cover;display:block;">
+                                            </a>
+                                        </div>
+                                    <?php else: ?>
+                                        <a href="/OOP/SupportSystem/<?= htmlspecialchars($file['file_path']) ?>" target="_blank" 
+                                           style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#60a5fa;text-decoration:none;font-size:13px;font-weight:500;transition:all 0.2s;">
+                                            <span>📎</span> <?= htmlspecialchars($file['file_name']) ?>
+                                        </a>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <div style="font-size:14px;line-height:1.6;color:#cbd5e1;word-break:break-word;white-space:pre-wrap;"><?= nl2br(htmlspecialchars($ticket['description'])) ?></div>
+                    </div>
                 </div>
 
-                <div style="padding:8px 16px;border-radius:999px;background:rgba(245,158,11,0.15);color:#fbbf24;font-size:12px;font-weight:800;letter-spacing:1px;"> 
-                    <?= htmlspecialchars($ticket['status']) ?>
-                </div>
+                <?php foreach($comments as $comment): ?>
+                    <?php if($comment['role'] == 'user'): ?>
+                        <div style="display:flex;justify-content:flex-start;width:100%;">
+                            <div style="max-width:75%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);padding:16px;border-radius:4px 18px 18px 18px;box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:30px;">
+                                    <div style="font-size:13px;font-weight:700;color:#cbd5e1;"><?= htmlspecialchars($comment['name']) ?></div>
+                                    <div style="font-size:11px;color:#64748b;"><?= $comment['created_at'] ?></div>
+                                </div>
+                                <div style="font-size:14px;line-height:1.6;color:#e2e8f0;word-break:break-word;white-space:pre-wrap;"><?= nl2br(htmlspecialchars($comment['message'])) ?></div>
+                            </div>
+                        </div>
 
-            </div>
-
-        </div>
-
-        <!-- CHAT BOX -->
-        <div id="chat-box" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(12px);border-radius:18px;padding:20px;height:500px;overflow-y:auto;display:flex;flex-direction:column;gap:18px;box-shadow:0 10px 35px rgba(0,0,0,0.25);">
-
-
-<!-- FIRST TICKET MESSAGE -->
-<div style="display:flex;justify-content:flex-start;">
-
-    <div style="max-width:75%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);padding:16px;border-radius:16px;">
-
-        <!-- TOP -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:20px;">
-
-            <div style="font-size:13px;font-weight:700;color:#cbd5e1;">
-                <?= htmlspecialchars($ticket['creator_name']) ?>
-            </div>
-
-            <div style="font-size:11px;color:#64748b;">
-                <?= $ticket['created_at'] ?>
-            </div>
-
-        </div>
-
-        <!-- TITLE -->
-        <div style="font-size:16px;font-weight:700;color:white;margin-bottom:15px;">
-            🎫 <?= htmlspecialchars($ticket['title']) ?>
-        </div>
-
-        <!-- ATTACHMENTS -->
-        <?php if(!empty($attachments)): ?>
-
-            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:15px;">
-
-                <?php foreach($attachments as $file): ?>
-
-                    <?php
-                        $extension = strtolower(pathinfo($file['file_name'], PATHINFO_EXTENSION));
-
-                        $isImage = in_array(
-                            $extension,
-                            ['jpg','jpeg','png','gif','webp']
-                        );
-                    ?>
-
-                    <?php if($isImage): ?>
-
-                        <!-- IMAGE CARD -->
-                        <div style="width:180px;flex-shrink:0;">
-
-                            <a href="/OOP/SupportSystem/<?= htmlspecialchars($file['file_path']) ?>" target="_blank">
-
-                                <img 
-                                    src="/OOP/SupportSystem/<?= htmlspecialchars($file['file_path']) ?>"
-                                    style="width:180px;height:140px;object-fit:cover;border-radius:12px;border:1px solid rgba(255,255,255,0.1);display:block;"
-                                >
-
-                            </a>
-
+                    <?php elseif($comment['role'] == 'agent'): ?>
+                        <div style="display:flex;justify-content:flex-end;width:100%;">
+                            <div style="max-width:75%;background:rgba(37,99,235,0.12);border:1px solid rgba(59,130,246,0.25);padding:16px;border-radius:18px 4px 18px 18px;box-shadow:0 4px 15px rgba(37,99,235,0.05);">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:30px;">
+                                    <div style="font-size:13px;font-weight:700;color:#93c5fd;display:flex;align-items:center;gap:6px;">
+                                        <span style="font-size:12px;">⚡</span> <?= htmlspecialchars($comment['name']) ?> <span style="font-weight:400;color:#60a5fa;font-size:11px;">(Support Agent)</span>
+                                    </div>
+                                    <div style="font-size:11px;color:#60a5fa;opacity:0.8;"><?= $comment['created_at'] ?></div>
+                                </div>
+                                <div style="font-size:14px;line-height:1.6;color:#eff6ff;word-break:break-word;white-space:pre-wrap;"><?= nl2br(htmlspecialchars($comment['message'])) ?></div>
+                            </div>
                         </div>
 
                     <?php else: ?>
-
-                        <!-- FILE LINK -->
-                        <a 
-                            href="/OOP/SupportSystem/<?= htmlspecialchars($file['file_path']) ?>"
-                            target="_blank"
-                            style="padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#93c5fd;text-decoration:none;font-size:13px;"
-                        >
-                            📎 <?= htmlspecialchars($file['file_name']) ?>
-                        </a>
-
+                        <div style="display:flex;justify-content:center;width:100%;margin:6px 0;">
+                            <div style="width:100%;max-width:85%;background:rgba(16,185,129,0.06);padding:14px 20px;border-radius:14px;border:1px solid rgba(16,185,129,0.18);box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:20px;border-bottom:1px solid rgba(16,185,129,0.1);padding-bottom:6px;">
+                                    <div style="font-size:12px;color:#34d399;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px;">
+                                        🛡️ <?= htmlspecialchars($comment['name']) ?> <span style="opacity:0.7;font-weight:400;text-transform:none;">(Administrator)</span>
+                                    </div>
+                                    <div style="font-size:11px;color:#94a3b8;"><?= $comment['created_at'] ?></div>
+                                </div>
+                                <div style="font-size:14px;line-height:1.6;color:#e5e7eb;word-break:break-word;white-space:pre-wrap;"><?= nl2br(htmlspecialchars($comment['message'])) ?></div>
+                            </div>
+                        </div>
                     <?php endif; ?>
-
                 <?php endforeach; ?>
 
             </div>
 
-        <?php endif; ?>
+            <div style="flex-shrink: 0; background:rgba(255,255,255,0.02); border-top:1px solid rgba(255,255,255,0.05); padding:24px;">
+                <form method="POST" style="display:flex;flex-direction:column;gap:16px;margin:0;">
+                    <input type="hidden" name="ticket_id" value="<?= $ticket_id ?>">
 
-        <!-- DESCRIPTION -->
-        <div style="font-size:14px;line-height:1.7;color:#e2e8f0;word-break:break-word;">
-            <?= nl2br(htmlspecialchars($ticket['description'])) ?>
-        </div>
-
-    </div>
-
-</div>
-
-
-
-            <!-- COMMENTS -->
-            <?php foreach($comments as $comment): ?>
-
-                <?php if($comment['role'] == 'user'): ?>
-
-                    <div style="display:flex;justify-content:flex-start;">
-
-                        <div style="max-width:70%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);padding:14px;border-radius:16px;">
-
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:20px;">
-
-                                <div style="font-size:13px;font-weight:700;color:#cbd5e1;">
-                                    <?= htmlspecialchars($comment['name']) ?>
-                                </div>
-
-                                <div style="font-size:11px;color:#64748b;">
-                                    <?= $comment['created_at'] ?>
-                                </div>
-
-                            </div>
-
-                            <div style="font-size:14px;line-height:1.6;color:#e2e8f0;">
-                                <?= nl2br(htmlspecialchars($comment['message'])) ?>
-                            </div>
-
-                        </div>
-
+                    <div style="position:relative;width:100%;">
+                        <textarea 
+                            name="message"
+                            class="input-focus"
+                            placeholder="Type your reply message here..."
+                            required
+                            style="width:100%;height:100px;resize:none;border-radius:14px;padding:16px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.08);color:#f1f5f9;font-size:14px;line-height:1.5;outline:none;box-sizing:border-box;transition:all 0.2s ease;"
+                        ></textarea>
                     </div>
 
-                <?php elseif($comment['role'] == 'agent'): ?>
-
-                    <div style="display:flex;justify-content:flex-end;">
-
-                        <div style="max-width:70%;background:rgba(59,130,246,0.14);border:1px solid rgba(59,130,246,0.25);padding:14px;border-radius:16px;">
-
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:20px;">
-
-                                <div style="font-size:13px;font-weight:700;color:#93c5fd;">
-                                    <?= htmlspecialchars($comment['name']) ?>
-                                </div>
-
-                                <div style="font-size:11px;color:#60a5fa;">
-                                    <?= $comment['created_at'] ?>
-                                </div>
-
-                            </div>
-
-                            <div style="font-size:14px;line-height:1.6;color:#eff6ff;">
-                                <?= nl2br(htmlspecialchars($comment['message'])) ?>
-                            </div>
-
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+                        <div style="font-size:12px;color:#64748b;display:flex;align-items:center;gap:6px;">
+                            <span style="display:inline-block;width:6px;height:6px;background:#64748b;border-radius:50%;"></span>
+                            Replies are strictly visible to the ticket owner and assigned internal staff.
                         </div>
 
+                        <div style="display:flex;gap:12px;align-items:center;">
+                            <button 
+                                type="button"
+                                class="btn-secondary"
+                                style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);color:#e5e7eb;padding:12px 18px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;gap:6px;"
+                            >
+                                📎 Attach File
+                            </button>
+
+                            <button 
+                                type="submit"
+                                name="send_comment"
+                                class="btn-primary"
+                                style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;border:none;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s ease;box-shadow:0 10px 20px rgba(37,99,235,0.2);"
+                            >
+                                Send Reply
+                            </button>
+                        </div>
                     </div>
-
-                <?php else: ?>
-
-                    <div style="align-self:center;max-width:80%;background:rgba(26, 209, 93, 0.15);padding:10px 14px;border-radius:14px;border:1px solid rgba(34,197,94,0.25);text-align:center;">
-
-                        <div style="font-size:12px;color:#34d399;margin-bottom:4px;">
-                            <?= htmlspecialchars($comment['name']) ?> (admin)
-                        </div>
-
-                        <div style="font-size:14px;color:#e5e7eb;">
-                            <?= nl2br(htmlspecialchars($comment['message'])) ?>
-                        </div>
-
-                        <div style="font-size:11px;color:#94a3b8;margin-top:6px;">
-                            <?= $comment['created_at'] ?>
-                        </div>
-
-                    </div>
-
-                <?php endif; ?>
-
-            <?php endforeach; ?>
-
-        </div>
-
-        <!-- REPLY FORM -->
-        <form method="POST" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:16px;border-radius:18px;display:flex;flex-direction:column;gap:14px;">
-
-            <input type="hidden" name="ticket_id" value="<?= $ticket_id ?>">
-
-            <textarea 
-                name="message"
-                placeholder="Type your reply..."
-                required
-                style="width:100%;height:110px;resize:none;border-radius:16px;padding:14px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;font-size:14px;outline:none;box-sizing:border-box;"
-            ></textarea>
-
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-
-                <div style="font-size:12px;color:#64748b;">
-                    Replies are visible to ticket owner and assigned agents
-                </div>
-
-                <div style="display:flex;gap:10px;">
-
-                    <button 
-                        type="button"
-                        style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;padding:12px 16px;border-radius:12px;font-weight:700;cursor:pointer;"
-                    >
-                        Attach File
-                    </button>
-
-                    <button 
-                        type="submit"
-                        name="send_comment"
-                        style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;border:none;padding:12px 20px;border-radius:12px;font-weight:800;cursor:pointer;box-shadow:0 10px 25px rgba(37,99,235,0.35);"
-                    >
-                        Send Reply
-                    </button>
-
-                </div>
-
+                </form>
             </div>
 
-        </form>
+        </div>
 
     </div>
-
 </div>
 
 </body>
 </html>
-```
