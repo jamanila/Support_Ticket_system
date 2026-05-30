@@ -191,12 +191,30 @@ $attachments = $attachmentModel->getByTicketId($ticket_id);
 
 <script>
 window.onload = function () {
-
     const chatBox = document.getElementById("chat-box");
+    const replyTextarea = document.querySelector('textarea[name="message"]');
+    const AUTO_RELOAD_INTERVAL_MS = 5000; // Reload every 5 seconds
 
-    if(chatBox){
+    if (chatBox) {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
+
+    // Schedule a page reload unless the user is actively typing a reply.
+    function scheduleReload() {
+        const isReplyFocused = document.activeElement === replyTextarea;
+        const hasReplyDraft = replyTextarea && replyTextarea.value.trim() !== '';
+
+        if (!replyTextarea || !hasReplyDraft || !isReplyFocused) {
+            setTimeout(function () {
+                window.location.reload();
+            }, AUTO_RELOAD_INTERVAL_MS);
+        } else {
+            // Keep waiting while the user is composing a reply.
+            setTimeout(scheduleReload, AUTO_RELOAD_INTERVAL_MS);
+        }
+    }
+
+    scheduleReload();
 };
 </script>
 

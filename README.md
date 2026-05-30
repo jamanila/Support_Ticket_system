@@ -108,6 +108,5 @@ SupportSystem/
 - Real-time chat with AJAX or WebSockets
 - Notification system
 - Pagination and advanced filtering
-- File attachments for tickets
 - Improved MVC structure and routing
 - REST API support

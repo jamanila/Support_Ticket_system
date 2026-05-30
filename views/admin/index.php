@@ -319,4 +319,19 @@ function filterTickets(){
         dropdown.style.display = 'none';
     });
 })();
+
+(function scheduleAdminReload(){
+    const active = document.activeElement;
+    const isTyping = active && ['INPUT','TEXTAREA','SELECT'].includes(active.tagName) && active.value && active.value.trim() !== '';
+
+    // Reload the admin dashboard every 5 seconds when the user is not typing.
+    if (isTyping) {
+        setTimeout(scheduleAdminReload, 5000);
+        return;
+    }
+
+    setTimeout(function(){
+        window.location.reload();
+    }, 5000);
+})();
 </script>

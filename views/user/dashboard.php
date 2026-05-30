@@ -162,4 +162,19 @@ function filterUserTickets(){
         row.style.display = text.includes(filter) ? '' : 'none';
     });
 }
+
+(function scheduleUserReload(){
+    const active = document.activeElement;
+    const isTyping = active && ['INPUT','TEXTAREA','SELECT'].includes(active.tagName) && active.value && active.value.trim() !== '';
+
+    // Reload the user dashboard every 5 seconds unless the user is typing.
+    if (isTyping) {
+        setTimeout(scheduleUserReload, 5000);
+        return;
+    }
+
+    setTimeout(function(){
+        window.location.reload();
+    }, 5000);
+})();
 </script>

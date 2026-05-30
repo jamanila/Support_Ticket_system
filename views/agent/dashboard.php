@@ -206,6 +206,21 @@ $tickets = $ticketModel->getTicketsForAgent($agent_id);
     });
 })();
 
+(function scheduleAgentReload(){
+    const active = document.activeElement;
+    const isTyping = active && ['INPUT','TEXTAREA','SELECT'].includes(active.tagName) && active.value && active.value.trim() !== '';
+
+    // Reload the agent dashboard every 5 seconds when not actively typing.
+    if (isTyping) {
+        setTimeout(scheduleAgentReload, 5000);
+        return;
+    }
+
+    setTimeout(function(){
+        window.location.reload();
+    }, 5000);
+})();
+
 function filterAgentTickets(){
     const input = document.getElementById('ticketSearch');
     const filter = input.value.toLowerCase();
