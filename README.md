@@ -103,10 +103,30 @@ SupportSystem/
 
 ---
 
+## Screenshots
+
+### Login Page
+![Login Page](https://raw.githubusercontent.com/jamanila/Support_Ticket_system/main/screenshots/login.png)
+
+### User Dashboard
+![User Dashboard](https://raw.githubusercontent.com/jamanila/Support_Ticket_system/main/screenshots/user_dashboard.png)
+
+### Ticket Creation
+![Ticket Creation](https://raw.githubusercontent.com/jamanila/Support_Ticket_system/main/screenshots/add-ticket.png)
+
+### Ticket Conversation
+![Ticket Chat](https://raw.githubusercontent.com/jamanila/Support_Ticket_system/main/screenshots/ticket_conversation.png)
+
+### Admin Dashboard
+![Admin Dashboard](https://raw.githubusercontent.com/jamanila/Support_Ticket_system/main/screenshots/admin_dashboard.png)
+
+### Agent Dashboard
+![Agent Dashboard](https://raw.githubusercontent.com/jamanila/Support_Ticket_system/main/screenshots/agent_dashboard.png)
+
+
 ## 🔮 Future Improvements
 
-- Real-time chat with AJAX or WebSockets
-- Notification system
+
 - Pagination and advanced filtering
 - Improved MVC structure and routing
 - REST API support
