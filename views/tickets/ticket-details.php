@@ -320,10 +320,6 @@ window.onload = function () {
                             &larr; Back
                         </a>
                     <?php endif; ?>
-
-                    <button class="btn-danger" style="background:#ef4444;border:none;color:white;padding:10px 18px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s ease;box-shadow:0 4px 12px rgba(239,68,68,0.2);"> 
-                        Close Ticket
-                    </button> 
                 </div> 
             </div> 
 
@@ -469,13 +465,6 @@ window.onload = function () {
                         </div>
 
                         <div style="display:flex;gap:12px;align-items:center;">
-                            <button 
-                                type="button"
-                                class="btn-secondary"
-                                style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);color:#e5e7eb;padding:12px 18px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;gap:6px;"
-                            >
-                                📎 Attach File
-                            </button>
 
                             <button 
                                 type="submit"
