@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/jamanila/Support_Ticket_system/52123a10559ba7996d8477d6c75d6cd9ecd2b84a/screenshots/bannerImage.png" width="900">
+</p>
+
+
+
 # 🛠 Support Ticket System (PHP OOP)
 
 A simple Support Ticket Management System built with plain PHP, MySQL, and session-based authentication. The application supports three roles: **Admin**, **Agent**, and **User**, with role-based access to dashboards, ticket creation, assignment, and conversation tracking.
@@ -130,3 +136,21 @@ SupportSystem/
 - Pagination and advanced filtering
 - Improved MVC structure and routing
 - REST API support
+
+## LOGIN CREDENTIALS
+## Admin:
+email: admin@gmail.com
+password: 1234
+
+## User/Client:
+email: user@gmail.com
+password: 1234
+
+## Agent:
+email: agent@gmail.com
+password: 1234
+
+Contact me:
+Phone Number: +255687516723
+email: informtech2001@gmail.com
+Location: Dar es salaam -Tanzania
